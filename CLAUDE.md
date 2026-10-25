@@ -36,7 +36,10 @@ iconen-wrapper, push en versie-check. Bij twijfel daar kijken hoe het is opgelos
 - `expo-speech-recognition` (hardop antwoorden, taal van de vraag) en `expo-speech` (vraag voorlezen).
 - `expo-notifications` voor push via Expo Push Service (APNs + FCM).
 - `expo-iap` (5.8.3) voor abonnementen via Apple/Google.
-- `@sentry/react-native` voor crashes (alleen met `EXPO_PUBLIC_SENTRY_DSN`, niet in `__DEV__`).
+- `@sentry/react-native` voor crashes (alleen met `EXPO_PUBLIC_SENTRY_DSN`, niet in `__DEV__`). Uploaden van source maps
+  staat uit (`SENTRY_DISABLE_AUTO_UPLOAD` in `eas.json`) tot er een Sentry-project is; anders faalt de iOS-build met
+  "An organization ID or slug is required". Aanzetten: organisatie/project in de Sentry-plugin in `app.json` en
+  `SENTRY_AUTH_TOKEN` als geheim in EAS, dan de regel uit `eas.json` halen.
 - `expo-updates` voor OTA-updates (`runtimeVersion.policy = appVersion`).
 - Geen Tailwind/NativeWind: kleuren en maten uit `src/constants/theme.ts` via `useTheme()`. Nooit een hex in een
   component.
