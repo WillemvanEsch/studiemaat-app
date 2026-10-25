@@ -6,6 +6,7 @@
 import { useState } from 'react'
 import { Image, KeyboardAvoidingView, Platform, StyleSheet, View } from 'react-native'
 
+import { Wordmark } from '@/components/brand'
 import { ThemedText } from '@/components/themed-text'
 import { Button, Field, Notice, Screen } from '@/components/ui'
 import { Spacing } from '@/constants/theme'
@@ -47,7 +48,7 @@ export default function LoginScreen() {
       <Screen edges={['top', 'bottom']} contentContainerStyle={styles.content}>
         <View style={styles.header}>
           <Image source={require('@/assets/images/icon.png')} style={styles.logo} />
-          <ThemedText style={styles.brand}>Studiemaat</ThemedText>
+          <Wordmark size={32} icon={false} />
           <ThemedText themeColor="textSecondary" style={styles.center}>
             Maak een foto van je lesstof. Studiemaat maakt er een uittreksel en oefenvragen van.
           </ThemedText>
@@ -112,7 +113,6 @@ const styles = StyleSheet.create({
   content: { flexGrow: 1, justifyContent: 'center', padding: Spacing.four, gap: Spacing.five },
   header: { alignItems: 'center', gap: Spacing.two },
   logo: { width: 72, height: 72, borderRadius: 18 },
-  brand: { fontSize: 30, lineHeight: 36, fontWeight: 800 },
   center: { textAlign: 'center' },
   form: { gap: Spacing.three },
   code: { fontSize: 28, letterSpacing: 8, textAlign: 'center' },

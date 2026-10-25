@@ -13,7 +13,7 @@ import { Linking, Platform, Pressable, StyleSheet, View } from 'react-native'
 import { Icon } from '@/components/icon'
 import { ThemedText } from '@/components/themed-text'
 import { Button, Card, Loading, Notice, Screen } from '@/components/ui'
-import { Radius, Spacing } from '@/constants/theme'
+import { DisplayFont, Radius, Spacing } from '@/constants/theme'
 import { useAuth } from '@/contexts/auth-context'
 import { useTheme } from '@/hooks/use-theme'
 import { daysLeft, formatDate } from '@/lib/format'
@@ -121,7 +121,7 @@ export default function SubscriptionScreen() {
     <Screen edges={[]}>
       <Card>
         <ThemedText type="smallBold">Je hebt nu</ThemedText>
-        <ThemedText style={{ fontSize: 22, fontWeight: 800 }}>
+        <ThemedText style={{ fontSize: 24, lineHeight: 30, fontFamily: DisplayFont.extraBold }}>
           {a.kind === 'gratis' ? 'Altijd gratis' : (a.label ?? (a.kind === 'actief' ? 'Actief' : 'Geen abonnement'))}
         </ThemedText>
         <ThemedText themeColor="textSecondary">
@@ -237,7 +237,7 @@ export default function SubscriptionScreen() {
 }
 
 const styles = StyleSheet.create({
-  h2: { fontSize: 21, lineHeight: 28, fontWeight: 800 },
+  h2: { fontSize: 22, lineHeight: 28, fontFamily: DisplayFont.extraBold },
   benefit: { flexDirection: 'row', gap: Spacing.two, alignItems: 'flex-start' },
   offer: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, borderRadius: Radius.lg, padding: Spacing.three, paddingTop: Spacing.four },
   badge: { position: 'absolute', top: -11, right: Spacing.three, borderRadius: 999, paddingHorizontal: Spacing.two, paddingVertical: 2 },

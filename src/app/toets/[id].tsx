@@ -19,7 +19,7 @@ import { Icon } from '@/components/icon'
 import { RichText } from '@/components/rich-text'
 import { ThemedText } from '@/components/themed-text'
 import { Button, Card, Field, Loading, Notice, Screen } from '@/components/ui'
-import { Radius, Spacing } from '@/constants/theme'
+import { DisplayFont, Radius, Spacing } from '@/constants/theme'
 import { useTheme } from '@/hooks/use-theme'
 import { gradeText } from '@/lib/format'
 
@@ -374,12 +374,12 @@ function Result({ test }: { test: Test }) {
 }
 
 const styles = StyleSheet.create({
-  h1: { fontSize: 24, lineHeight: 30, fontWeight: 800, textAlign: 'center' },
+  h1: { fontSize: 26, lineHeight: 32, fontFamily: DisplayFont.extraBold, textAlign: 'center' },
   question: { fontSize: 21, lineHeight: 29, fontWeight: 700 },
   row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
   progress: { height: 6, borderRadius: Radius.full, overflow: 'hidden' },
   option: { flexDirection: 'row', gap: Spacing.three, alignItems: 'center', borderWidth: 1.5, borderRadius: Radius.md, padding: Spacing.three },
-  grade: { fontSize: 64, lineHeight: 72, fontWeight: 800 },
+  grade: { fontSize: 68, lineHeight: 76, fontFamily: DisplayFont.extraBold },
 })
 
 /**

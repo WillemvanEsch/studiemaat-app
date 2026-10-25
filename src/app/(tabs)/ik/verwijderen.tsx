@@ -8,6 +8,7 @@ import { useState } from 'react'
 
 import { deleteAccount } from '@/api'
 import { ThemedText } from '@/components/themed-text'
+import { DisplayFont } from '@/constants/theme'
 import { Button, Card, Field, Notice, Screen } from '@/components/ui'
 import { useAuth } from '@/contexts/auth-context'
 
@@ -36,7 +37,7 @@ export default function DeleteAccountScreen() {
   return (
     <Screen edges={[]}>
       <Card>
-        <ThemedText style={{ fontSize: 20, fontWeight: 800 }}>Weet je het zeker?</ThemedText>
+        <ThemedText style={{ fontSize: 22, lineHeight: 28, fontFamily: DisplayFont.extraBold }}>Weet je het zeker?</ThemedText>
         <ThemedText>
           Je account, je lessen, je foto’s en je toetsresultaten worden definitief verwijderd. Dit kun je niet ongedaan maken.
         </ThemedText>

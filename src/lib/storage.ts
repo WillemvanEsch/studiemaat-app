@@ -83,3 +83,12 @@ export async function getWeergave(): Promise<Weergave> {
   return v === 'licht' || v === 'donker' ? v : 'auto'
 }
 export const saveWeergave = (v: Weergave) => SecureStore.setItemAsync(WEERGAVE_KEY, v)
+
+/** Arceerkleur van de belangrijkste stof in uittreksels (zoals op de website). Alleen op dit toestel. */
+export type MarkColor = 'geel' | 'roze' | 'groen' | 'blauw' | 'oranje'
+const MARK_KEY = 'studiemaat_arceerkleur'
+export async function getMarkColor(): Promise<MarkColor> {
+  const v = await SecureStore.getItemAsync(MARK_KEY)
+  return v === 'roze' || v === 'groen' || v === 'blauw' || v === 'oranje' ? v : 'geel'
+}
+export const saveMarkColor = (v: MarkColor) => SecureStore.setItemAsync(MARK_KEY, v)

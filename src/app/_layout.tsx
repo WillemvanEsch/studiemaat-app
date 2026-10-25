@@ -1,4 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { useFonts } from 'expo-font'
 import { Stack } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 import { useEffect } from 'react'
@@ -8,7 +9,9 @@ import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-c
 import { VersionGate } from '@/components/version-gate'
 import { AuthProvider } from '@/contexts/auth-context'
 import { useTheme } from '@/hooks/use-theme'
+import { DisplayFont } from '@/constants/theme'
 import { loadWeergave } from '@/lib/appearance'
+import { loadMarkColor } from '@/lib/mark-color'
 import { attachNotificationHandlers } from '@/lib/push-notifications'
 import { initSentry, Sentry } from '@/lib/sentry'
 
@@ -16,6 +19,7 @@ import { initSentry, Sentry } from '@/lib/sentry'
 initSentry()
 // Gekozen weergave (licht/donker) meteen toepassen.
 loadWeergave().catch(() => {})
+loadMarkColor().catch(() => {})
 
 // Eén client voor de hele app (buiten de component, zodat hot reload de cache niet leegt).
 const queryClient = new QueryClient({
@@ -53,6 +57,13 @@ function RootLayout() {
   useEffect(() => {
     attachNotificationHandlers()
   }, [])
+  // Lettertype voor koppen (zelfde als de website). Even wachten tot hij geladen is, anders verspringen
+  // de koppen; lukt laden niet, dan gewoon door met het systeemlettertype.
+  const [fontsLoaded, fontError] = useFonts({
+    [DisplayFont.bold]: require('@/assets/fonts/BricolageGrotesque-Bold.ttf'),
+    [DisplayFont.extraBold]: require('@/assets/fonts/BricolageGrotesque-ExtraBold.ttf'),
+  })
+  if (!fontsLoaded && !fontError) return null
 
   return (
     <SafeAreaProvider initialMetrics={initialWindowMetrics}>

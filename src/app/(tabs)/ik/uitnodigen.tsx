@@ -8,7 +8,7 @@ import { fetchInvites, sendInvite } from '@/api'
 import { Icon } from '@/components/icon'
 import { ThemedText } from '@/components/themed-text'
 import { Button, Card, Field, Loading, Notice, Screen } from '@/components/ui'
-import { Spacing } from '@/constants/theme'
+import { DisplayFont, Spacing } from '@/constants/theme'
 import { useTheme } from '@/hooks/use-theme'
 
 export default function InviteScreen() {
@@ -43,7 +43,7 @@ export default function InviteScreen() {
   return (
     <Screen edges={[]}>
       <Card>
-        <ThemedText style={{ fontSize: 20, fontWeight: 800 }}>Geef een maand Studiemaat cadeau</ThemedText>
+        <ThemedText style={{ fontSize: 22, lineHeight: 28, fontFamily: DisplayFont.extraBold }}>Geef een maand Studiemaat cadeau</ThemedText>
         <ThemedText themeColor="textSecondary">
           Deel je eigen link via WhatsApp of waar je maar wilt. Wie via jouw link een account maakt, krijgt {days} dagen gratis.
           {d ? ` Je kunt nog ${left} ${left === 1 ? 'vriend' : 'vrienden'} uitnodigen.` : ''}

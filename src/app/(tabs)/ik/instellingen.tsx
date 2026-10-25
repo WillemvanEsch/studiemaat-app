@@ -12,10 +12,12 @@ import type { Difficulty, QuestionAmount, ScanPart } from '@/api'
 import { Icon } from '@/components/icon'
 import { ThemedText } from '@/components/themed-text'
 import { Button, Card, Chips, Field, Loading, Notice, Screen } from '@/components/ui'
-import { Spacing } from '@/constants/theme'
+import { MarkColors, Spacing } from '@/constants/theme'
 import { useAuth } from '@/contexts/auth-context'
+import { useColorScheme } from '@/hooks/use-color-scheme'
 import { useTheme } from '@/hooks/use-theme'
 import { getWeergave, setWeergave, type Weergave } from '@/lib/appearance'
+import { MARK_OPTIONS, setMarkColor, useMarkColor } from '@/lib/mark-color'
 
 export default function SettingsScreen() {
   const { me, setMe } = useAuth()
@@ -153,10 +155,60 @@ export default function SettingsScreen() {
           Automatisch volgt de instelling van je telefoon.
         </ThemedText>
       </Card>
+
+      <MarkColorCard />
     </Screen>
   )
 }
 
+/** Arceerkleur van de belangrijkste stof in uittreksels, zoals bij Weergave op de website. Gaat meteen in. */
+function MarkColorCard() {
+  const theme = useTheme()
+  const scheme = useColorScheme() === 'dark' ? 'dark' : 'light'
+  const current = useMarkColor()
+  return (
+    <Card>
+      <ThemedText type="smallBold">Arceerkleur</ThemedText>
+      <ThemedText type="small" themeColor="textSecondary">
+        De kleur waarmee de{' '}
+        <ThemedText type="small" style={{ backgroundColor: current.bg, color: current.text }}>
+          belangrijkste stof
+        </ThemedText>{' '}
+        in je uittreksels wordt gemarkeerd.
+      </ThemedText>
+      <View style={styles.swatches} accessibilityRole="radiogroup">
+        {MARK_OPTIONS.map((o) => {
+          const on = o.id === current.mark
+          return (
+            <Pressable
+              key={o.id}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: on }}
+              accessibilityLabel={o.label}
+              onPress={() => setMarkColor(o.id).catch(() => {})}
+              style={styles.swatchItem}>
+              <View
+                style={[
+                  styles.swatch,
+                  { backgroundColor: MarkColors[o.id][scheme].bg, borderColor: on ? theme.primary : theme.border },
+                  on && { borderWidth: 3 },
+                ]}>
+                {on ? <Icon name="checkmark" size={18} tintColor={MarkColors[o.id][scheme].text} /> : null}
+              </View>
+              <ThemedText type="small" themeColor={on ? 'text' : 'textSecondary'}>
+                {o.label}
+              </ThemedText>
+            </Pressable>
+          )
+        })}
+      </View>
+    </Card>
+  )
+}
+
 const styles = StyleSheet.create({
+  swatches: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.three },
+  swatchItem: { alignItems: 'center', gap: Spacing.one },
+  swatch: { width: 44, height: 44, borderRadius: 22, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   check: { flexDirection: 'row', gap: Spacing.three, alignItems: 'flex-start', paddingVertical: Spacing.one },
 })

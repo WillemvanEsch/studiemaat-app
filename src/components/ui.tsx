@@ -15,13 +15,14 @@ import {
   type ScrollViewProps,
   type StyleProp,
   type TextInputProps,
+  type TextStyle,
   type ViewStyle,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { Icon } from '@/components/icon'
 import { ThemedText } from '@/components/themed-text'
-import { MaxContentWidth, Radius, Spacing } from '@/constants/theme'
+import { DisplayFont, MaxContentWidth, Radius, Spacing } from '@/constants/theme'
 import { useTheme } from '@/hooks/use-theme'
 
 /** Scherm met veilige randen en (standaard) scrollen. */
@@ -56,6 +57,11 @@ export function Title({ children, sub }: { children: ReactNode; sub?: ReactNode 
       {sub ? <ThemedText themeColor="textSecondary">{sub}</ThemedText> : null}
     </View>
   )
+}
+
+/** Tussenkop in het lettertype van de website, bv. "Mijn lessen". */
+export function Heading({ children, style }: { children: ReactNode; style?: StyleProp<TextStyle> }) {
+  return <ThemedText style={[styles.heading, style]}>{children}</ThemedText>
 }
 
 export function Card({
@@ -188,7 +194,9 @@ const styles = StyleSheet.create({
     maxWidth: MaxContentWidth,
     alignSelf: 'center',
   },
-  title: { fontSize: 28, lineHeight: 34, fontWeight: 700 },
+  // Koppen in het lettertype van de website. Geen fontWeight: de dikte zit in het lettertype zelf.
+  title: { fontSize: 30, lineHeight: 36, fontFamily: DisplayFont.extraBold, letterSpacing: -0.5 },
+  heading: { fontSize: 22, lineHeight: 28, fontFamily: DisplayFont.extraBold, letterSpacing: -0.3 },
   card: { borderRadius: Radius.lg, borderWidth: StyleSheet.hairlineWidth, padding: Spacing.three, gap: Spacing.two },
   button: {
     minHeight: 50,

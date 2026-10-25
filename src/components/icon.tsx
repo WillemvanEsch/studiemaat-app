@@ -150,6 +150,8 @@ const SF_TO_MATERIAL: Record<string, MaterialName> = {
   'questionmark.circle': 'help-outline',
   'slider.horizontal.3': 'tune',
   'plus': 'add',
+  highlighter: 'border-color',
+  target: 'track-changes',
   'arrow.up.right.square': 'open-in-new',
   envelope: 'mail-outline',
   globe: 'language',

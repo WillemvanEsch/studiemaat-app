@@ -14,9 +14,10 @@ import type { Lesson, TopicStat } from '@/api'
 import { Flashcards } from '@/components/flashcards'
 import { Icon } from '@/components/icon'
 import { RichText } from '@/components/rich-text'
+import { SubjectChip } from '@/components/subject-chip'
 import { ThemedText } from '@/components/themed-text'
 import { Button, Card, Chips, Loading, Notice, Screen } from '@/components/ui'
-import { Radius, Spacing } from '@/constants/theme'
+import { DisplayFont, Radius, Spacing } from '@/constants/theme'
 import { useTheme } from '@/hooks/use-theme'
 
 type Tab = 'uittreksel' | 'begrippen' | 'kaarten' | 'fotos'
@@ -135,9 +136,7 @@ function LessonBody({ lesson }: { lesson: Lesson }) {
   return (
     <Screen edges={[]}>
       <View style={{ gap: Spacing.one }}>
-        <ThemedText type="small" themeColor="textSecondary">
-          {lesson.subject}
-        </ThemedText>
+        <SubjectChip subject={lesson.subject} />
         <ThemedText style={styles.h1}>{lesson.title}</ThemedText>
         <ThemedText themeColor="textSecondary">{c.korteSamenvatting}</ThemedText>
       </View>
@@ -311,8 +310,8 @@ function Photos({ lesson }: { lesson: Lesson }) {
 }
 
 const styles = StyleSheet.create({
-  h1: { fontSize: 26, lineHeight: 32, fontWeight: 800 },
-  h2: { fontSize: 19, lineHeight: 26, fontWeight: 700 },
+  h1: { fontSize: 28, lineHeight: 34, fontFamily: DisplayFont.extraBold, letterSpacing: -0.5 },
+  h2: { fontSize: 20, lineHeight: 26, fontFamily: DisplayFont.bold },
   testRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
   sidenote: { borderLeftWidth: 4, borderRadius: Radius.sm, padding: Spacing.two, gap: 2 },
   topic: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },

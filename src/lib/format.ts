@@ -13,3 +13,17 @@ export function daysLeft(iso: string): number {
 
 /** Cijfer met komma: 7,5 */
 export const gradeText = (g: number | null) => (g === null ? '–' : g.toFixed(1).replace('.', ','))
+
+/** Vaste kleur per vak, zelfde berekening als de website (studypro format.ts subjectColor). Geeft een index in SubjectColors. */
+export function subjectColorIndex(subject: string, count: number): number {
+  let h = 0
+  for (const c of subject.toLowerCase()) h = (h * 31 + c.charCodeAt(0)) >>> 0
+  return h % count
+}
+
+/** Kleur van een cijfer: groen vanaf 6,5, oranje vanaf 5,5, anders rood (zoals op de website). */
+export const gradeTone = (g: number | null): 'gradeGood' | 'gradeOk' | 'gradeBad' | 'textSecondary' =>
+  g === null ? 'textSecondary' : g >= 6.5 ? 'gradeGood' : g >= 5.5 ? 'gradeOk' : 'gradeBad'
+
+/** "zaterdag 25 oktober", voor boven de begroeting. */
+export const todayText = () => new Date().toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long' })

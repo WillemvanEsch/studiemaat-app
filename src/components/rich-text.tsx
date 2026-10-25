@@ -1,6 +1,6 @@
 /**
  * Tekst uit de AI zoals de website hem toont (src/components/Rich.tsx): een klein stukje Markdown.
- *   ==highlight==  → geel gemarkeerd (de belangrijkste stof)
+ *   ==highlight==  → gemarkeerd in de arceerkleur (de belangrijkste stof)
  *   **vet**        → begrippen
  *   - opsomming    → lijstje
  * Meer hebben we niet nodig, dus geen hele Markdown-bibliotheek.
@@ -11,17 +11,18 @@ import { StyleSheet, Text, View } from 'react-native'
 
 import { ThemedText } from '@/components/themed-text'
 import { Spacing } from '@/constants/theme'
-import { useTheme } from '@/hooks/use-theme'
+import { useMarkColor } from '@/lib/mark-color'
 
 function Inline({ text }: { text: string }) {
-  const theme = useTheme()
+  // Arceerkleur zoals gekozen bij Instellingen (standaard geel).
+  const mark = useMarkColor()
   const parts = text.split(/(==[^=]+==|\*\*[^*]+\*\*)/g).filter(Boolean)
   return (
     <>
       {parts.map((p, i) => {
         if (p.startsWith('==') && p.endsWith('==') && p.length > 4)
           return (
-            <Text key={i} style={{ backgroundColor: theme.mark, color: theme.markText }}>
+            <Text key={i} style={{ backgroundColor: mark.bg, color: mark.text }}>
               {p.slice(2, -2)}
             </Text>
           )
