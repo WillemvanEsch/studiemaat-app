@@ -40,6 +40,8 @@ iconen-wrapper, push en versie-check. Bij twijfel daar kijken hoe het is opgelos
   `studiemaat-app`, regio EU (`https://de.sentry.io/`, staat in de plugin in `app.json`). De DSN staat als terugval in
   `src/lib/sentry.ts` (niet geheim); `EXPO_PUBLIC_SENTRY_DSN` in EAS gaat voor. Source maps uploaden lukt pas met
   `SENTRY_AUTH_TOKEN` als geheim in EAS; zonder token gaat de build door dankzij `SENTRY_ALLOW_FAILURE` in `eas.json`.
+- **fetch is `expo/fetch`** (Expo 56 vervangt de globale fetch). Die kent het React Native-bestand `{ uri, name, type }`
+  in FormData niet (fout = "Geen verbinding"); geef een object met `name`, `type` en `bytes()` (zie `uploadPhoto`).
 - `expo-updates` voor OTA-updates (`runtimeVersion.policy = appVersion`).
 - Geen Tailwind/NativeWind: kleuren en maten uit `src/constants/theme.ts` via `useTheme()`. Nooit een hex in een
   component.
