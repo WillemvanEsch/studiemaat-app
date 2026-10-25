@@ -1,0 +1,136 @@
+/**
+ * Naam, niveau, leerjaar en moeilijkheid, plus wat er standaard gemaakt wordt bij een nieuwe les.
+ * De keuzelijsten komen van de website (/mobile/options), zodat app en site altijd hetzelfde aanbieden.
+ */
+
+import { useMutation, useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
+import { Pressable, StyleSheet, View } from 'react-native'
+
+import { fetchOptions, updateMe } from '@/api'
+import type { Difficulty, QuestionAmount, ScanPart } from '@/api'
+import { Icon } from '@/components/icon'
+import { ThemedText } from '@/components/themed-text'
+import { Button, Card, Chips, Field, Loading, Notice, Screen } from '@/components/ui'
+import { Spacing } from '@/constants/theme'
+import { useAuth } from '@/contexts/auth-context'
+import { useTheme } from '@/hooks/use-theme'
+
+export default function SettingsScreen() {
+  const { me, setMe } = useAuth()
+  const theme = useTheme()
+  const options = useQuery({
+    queryKey: ['options'],
+    queryFn: async () => {
+      const r = await fetchOptions()
+      if (!r.ok) throw new Error(r.error.message)
+      return r.data
+    },
+    staleTime: Infinity,
+  })
+  const [name, setName] = useState(me?.user.name ?? '')
+  const [level, setLevel] = useState<string | null>(me?.profile.level ?? null)
+  const [year, setYear] = useState<number | null>(me?.profile.year ?? null)
+  const [difficulty, setDifficulty] = useState<Difficulty>(me?.profile.difficulty ?? 'normaal')
+  const [parts, setParts] = useState<ScanPart[]>(me?.scan.parts ?? ['uittreksel', 'begrippen', 'tabellen', 'vragen'])
+  const [amount, setAmount] = useState<QuestionAmount>(me?.scan.questions ?? 'normaal')
+
+  const save = useMutation({
+    mutationFn: async () => {
+      const r = await updateMe({ name: name.trim(), level, year, difficulty, scan: { parts, questions: amount } })
+      if (!r.ok) throw new Error(r.error.message)
+      await setMe(r.data)
+    },
+  })
+
+  if (options.isLoading || !me) return <Loading />
+  if (!options.data)
+    return (
+      <Screen edges={[]}>
+        <Notice kind="error">{(options.error as Error | null)?.message ?? 'Laden lukte niet'}</Notice>
+      </Screen>
+    )
+  const o = options.data
+  const current = o.levels.find((l) => l.id === level)
+  const years = current?.years ?? 0
+
+  const toggle = (p: ScanPart) => {
+    save.reset()
+    setParts((list) => (list.includes(p) ? list.filter((x) => x !== p) : [...list, p]))
+  }
+
+  return (
+    <Screen edges={[]}>
+      <Card>
+        <Field label="Je naam" value={name} onChangeText={setName} autoComplete="name" textContentType="givenName" maxLength={60} />
+      </Card>
+
+      <Card>
+        <ThemedText type="smallBold">Welke opleiding doe je?</ThemedText>
+        <Chips
+          options={o.levels.map((l) => ({ id: l.id, label: l.label }))}
+          value={level}
+          onChange={(id) => {
+            setLevel(id)
+            setYear(null)
+          }}
+        />
+        {years ? (
+          <>
+            <ThemedText type="smallBold">In welk jaar zit je?</ThemedText>
+            <Chips
+              options={Array.from({ length: years }, (_, i) => ({ id: String(i + 1), label: String(i + 1) }))}
+              value={year ? String(year) : null}
+              onChange={(y) => setYear(Number(y))}
+            />
+          </>
+        ) : null}
+      </Card>
+
+      <Card>
+        <ThemedText type="smallBold">Hoe moeilijk mogen de vragen zijn?</ThemedText>
+        <Chips options={o.difficulties} value={difficulty} onChange={setDifficulty} />
+        <ThemedText type="small" themeColor="textSecondary">
+          {o.difficulties.find((d) => d.id === difficulty)?.text}
+        </ThemedText>
+      </Card>
+
+      <Card>
+        <ThemedText type="smallBold">Wat maakt Studiemaat bij een nieuwe les?</ThemedText>
+        {o.scanParts.map((p) => {
+          const on = parts.includes(p.id)
+          return (
+            <Pressable
+              key={p.id}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: on }}
+              onPress={() => toggle(p.id)}
+              style={styles.check}>
+              <Icon name={on ? 'checkmark.circle.fill' : 'circle'} size={22} tintColor={on ? theme.primary : theme.textSecondary} />
+              <View style={{ flex: 1 }}>
+                <ThemedText>{p.label}</ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">
+                  {p.text}
+                </ThemedText>
+              </View>
+            </Pressable>
+          )
+        })}
+        {parts.includes('vragen') ? (
+          <>
+            <ThemedText type="smallBold">Hoeveel vragen?</ThemedText>
+            <Chips options={o.questionAmounts.map((q) => ({ id: q.id, label: `${q.label} (${q.count})` }))} value={amount} onChange={setAmount} />
+          </>
+        ) : null}
+      </Card>
+
+      {save.isSuccess ? <Notice kind="ok">Opgeslagen.</Notice> : null}
+      {save.isError ? <Notice kind="error">{(save.error as Error).message}</Notice> : null}
+      <Button title="Opslaan" loading={save.isPending} disabled={!name.trim() || !parts.length} onPress={() => save.mutate()} />
+    </Screen>
+  )
+}
+
+const styles = StyleSheet.create({
+  check: { flexDirection: 'row', gap: Spacing.three, alignItems: 'flex-start', paddingVertical: Spacing.one },
+})
