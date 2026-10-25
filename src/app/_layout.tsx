@@ -8,11 +8,14 @@ import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-c
 import { VersionGate } from '@/components/version-gate'
 import { AuthProvider } from '@/contexts/auth-context'
 import { useTheme } from '@/hooks/use-theme'
+import { loadWeergave } from '@/lib/appearance'
 import { attachNotificationHandlers } from '@/lib/push-notifications'
 import { initSentry, Sentry } from '@/lib/sentry'
 
 // Sentry zo vroeg mogelijk, zodat ook fouten bij het eerste renderen binnenkomen.
 initSentry()
+// Gekozen weergave (licht/donker) meteen toepassen.
+loadWeergave().catch(() => {})
 
 // Eén client voor de hele app (buiten de component, zodat hot reload de cache niet leegt).
 const queryClient = new QueryClient({
@@ -40,6 +43,8 @@ function RootStack() {
       }}>
       <Stack.Screen name="les/[id]" options={{ headerShown: true, title: '' }} />
       <Stack.Screen name="toets/[id]" options={{ headerShown: true, title: '', gestureEnabled: false }} />
+      <Stack.Screen name="privacy" options={{ headerShown: true, title: 'Privacy' }} />
+      <Stack.Screen name="hulp" options={{ headerShown: true, title: 'Hulp en contact' }} />
     </Stack>
   )
 }

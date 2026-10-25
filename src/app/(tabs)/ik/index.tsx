@@ -1,10 +1,10 @@
 /** Ik: wie je bent, je abonnement en de links naar instellingen, uitnodigen, privacy, uitloggen en account verwijderen. */
 
 import Constants from 'expo-constants'
-import { router, type Href } from 'expo-router'
-import { Alert, Linking, Pressable, StyleSheet } from 'react-native'
+import { router } from 'expo-router'
+import { Alert } from 'react-native'
 
-import { Icon } from '@/components/icon'
+import { ListRow as Row } from '@/components/list-row'
 import { ThemedText } from '@/components/themed-text'
 import { Card, Screen, Title } from '@/components/ui'
 import { Spacing } from '@/constants/theme'
@@ -33,10 +33,10 @@ export default function IkScreen() {
       </Card>
 
       <Card style={{ paddingVertical: Spacing.one, gap: 0 }}>
-        <Row icon="slider.horizontal.3" label="Niveau en instellingen" href="/(tabs)/ik/instellingen" />
+        <Row icon="slider.horizontal.3" label="Instellingen" sub="Niveau, vragen en weergave (licht of donker)" href="/(tabs)/ik/instellingen" />
         <Row icon="person.badge.plus" label="Vriend uitnodigen" href="/(tabs)/ik/uitnodigen" />
-        <Row icon="hand.raised" label="Privacyverklaring" onPress={() => Linking.openURL('https://www.studiemaat.nl/privacy')} />
-        <Row icon="questionmark.circle" label="Hulp en contact" onPress={() => Linking.openURL('mailto:info@studiemaat.nl')} last />
+        <Row icon="hand.raised" label="Privacy" href="/privacy" />
+        <Row icon="questionmark.circle" label="Hulp en contact" href="/hulp" last />
       </Card>
 
       <Card style={{ paddingVertical: Spacing.one, gap: 0 }}>
@@ -51,39 +51,3 @@ export default function IkScreen() {
   )
 }
 
-function Row({
-  icon,
-  label,
-  href,
-  onPress,
-  color,
-  last,
-}: {
-  icon: string
-  label: string
-  href?: Href
-  onPress?: () => void
-  color?: string
-  last?: boolean
-}) {
-  const theme = useTheme()
-  const tint = color ?? theme.text
-  return (
-    <Pressable
-      accessibilityRole="button"
-      onPress={onPress ?? (() => href && router.push(href))}
-      style={({ pressed }) => [
-        styles.row,
-        !last && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: theme.border },
-        pressed && { opacity: 0.6 },
-      ]}>
-      <Icon name={icon} size={20} tintColor={color ?? theme.primary} />
-      <ThemedText style={{ flex: 1, color: tint }}>{label}</ThemedText>
-      <Icon name="chevron.right" size={14} tintColor={theme.textSecondary} />
-    </Pressable>
-  )
-}
-
-const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, paddingVertical: Spacing.three },
-})

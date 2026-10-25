@@ -2,7 +2,7 @@
 
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { router } from 'expo-router'
-import { Alert, RefreshControl, StyleSheet, View } from 'react-native'
+import { Alert, StyleSheet, View } from 'react-native'
 
 import { deleteTest, fetchTests } from '@/api'
 import type { TestListItem } from '@/api'
@@ -10,6 +10,7 @@ import { Icon } from '@/components/icon'
 import { ThemedText } from '@/components/themed-text'
 import { Card, Loading, Notice, Screen, Title } from '@/components/ui'
 import { Spacing } from '@/constants/theme'
+import { usePullRefresh } from '@/hooks/use-pull-refresh'
 import { useTheme } from '@/hooks/use-theme'
 import { formatDate, gradeText } from '@/lib/format'
 
@@ -38,8 +39,9 @@ export default function TestsScreen() {
       },
     ])
 
+  const refresh = usePullRefresh(tests.refetch)
   return (
-    <Screen refreshControl={<RefreshControl refreshing={tests.isRefetching} onRefresh={() => tests.refetch()} />}>
+    <Screen refreshControl={refresh}>
       <Title sub="Je proeftoetsen en oefenrondes. Houd ingedrukt om te verwijderen.">Toetsen</Title>
       {tests.isLoading ? <Loading /> : null}
       {tests.isError ? <Notice kind="error">{(tests.error as Error).message}</Notice> : null}

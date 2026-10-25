@@ -19,6 +19,6 @@ export const updateMe = (input: UpdateMeInput) => apiFetch<Me>('/mobile/me', { m
 export const deleteAccount = () =>
   apiFetch<{ deleted: boolean; requested?: boolean; message?: string }>('/mobile/me', { method: 'DELETE' })
 
-export const fetchInvites = () => apiFetch<{ invites: Invite[]; max: number; friendDays: number }>('/mobile/invites')
+export const fetchInvites = () => apiFetch<{ invites: Invite[]; max: number; friendDays: number; shareUrl?: string }>('/mobile/invites')
 
 export const sendInvite = (email: string) => apiFetch<{ sent: string }>('/mobile/invites', { method: 'POST', body: { email } })

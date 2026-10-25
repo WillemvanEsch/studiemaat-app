@@ -193,7 +193,7 @@ function Runner({ test }: { test: Test }) {
             hitSlop={12}
             onPress={() => {
               Speech.stop()
-              Speech.speak(q.soort === 'meerkeuze' ? `${q.vraag}. ${q.opties.join('. ')}` : q.vraag, { language: q.taal || 'nl-NL' })
+              Speech.speak(spoken(q), { language: q.taal || 'nl-NL' })
             }}>
             <Icon name="speaker.wave.2.fill" size={22} tintColor={theme.primary} />
           </Pressable>
@@ -381,3 +381,12 @@ const styles = StyleSheet.create({
   option: { flexDirection: 'row', gap: Spacing.three, alignItems: 'center', borderWidth: 1.5, borderRadius: Radius.md, padding: Spacing.three },
   grade: { fontSize: 64, lineHeight: 72, fontWeight: 800 },
 })
+
+/**
+ * Wat er wordt voorgelezen. Bij meerkeuze ook de letters (A, B, C), net als op het scherm, zodat je weet welke
+ * je moet kiezen. De punt na de letter zorgt dat hij als letter wordt uitgesproken, met een korte pauze.
+ */
+function spoken(q: { soort: string; vraag: string; opties: string[] }) {
+  if (q.soort !== 'meerkeuze') return q.vraag
+  return [q.vraag, ...q.opties.map((o, i) => `${String.fromCharCode(65 + i)}. ${o}`)].join('. ')
+}

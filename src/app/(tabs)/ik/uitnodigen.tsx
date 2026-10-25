@@ -45,9 +45,25 @@ export default function InviteScreen() {
       <Card>
         <ThemedText style={{ fontSize: 20, fontWeight: 800 }}>Geef een maand Studiemaat cadeau</ThemedText>
         <ThemedText themeColor="textSecondary">
-          Je vriend of vriendin krijgt {days} dagen gratis. Vul het mailadres in, dan sturen wij een uitnodiging.
+          Deel je eigen link via WhatsApp of waar je maar wilt. Wie via jouw link een account maakt, krijgt {days} dagen gratis.
           {d ? ` Je kunt nog ${left} ${left === 1 ? 'vriend' : 'vrienden'} uitnodigen.` : ''}
         </ThemedText>
+        <Button
+          title="Deel je link"
+          icon="square.and.arrow.up"
+          disabled={!left}
+          onPress={() =>
+            // Met de persoonlijke link (studiemaat.nl/vriend/...) krijgt je vriend de gratis maand en zien wij wie uitnodigde.
+            // Oudere website zonder shareUrl: gewoon de voorpagina.
+            Share.share({
+              message: `Ik leer voor mijn toetsen met Studiemaat: maak een foto van je boek en je krijgt een uittreksel en oefenvragen. Via deze link krijg je ${days} dagen gratis: ${d?.shareUrl ?? 'https://www.studiemaat.nl'}`,
+            })
+          }
+        />
+      </Card>
+
+      <Card>
+        <ThemedText type="smallBold">Of stuur een uitnodiging per mail</ThemedText>
         <Field
           placeholder="naam@voorbeeld.nl"
           value={email}
@@ -62,15 +78,7 @@ export default function InviteScreen() {
         />
         {send.isSuccess ? <Notice kind="ok">{`Uitnodiging verstuurd naar ${send.data}.`}</Notice> : null}
         {send.isError ? <Notice kind="error">{(send.error as Error).message}</Notice> : null}
-        <Button title="Uitnodiging sturen" icon="envelope.badge" disabled={!email.includes('@') || !left} loading={send.isPending} onPress={() => send.mutate()} />
-        <Button
-          title="Vertel het via WhatsApp of berichten"
-          kind="ghost"
-          icon="square.and.arrow.up"
-          onPress={() =>
-            Share.share({ message: 'Ik leer voor mijn toetsen met Studiemaat: foto van je boek, en je krijgt een uittreksel en oefenvragen. https://www.studiemaat.nl' })
-          }
-        />
+        <Button title="Uitnodiging sturen" kind="secondary" icon="envelope.badge" disabled={!email.includes('@') || !left} loading={send.isPending} onPress={() => send.mutate()} />
       </Card>
 
       {d?.invites.length ? (

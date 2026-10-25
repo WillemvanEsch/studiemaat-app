@@ -10,6 +10,7 @@ import { useFocusEffect } from 'expo-router'
 import { useCallback, useEffect, useState } from 'react'
 import { Linking, Platform, Pressable, StyleSheet, View } from 'react-native'
 
+import { Icon } from '@/components/icon'
 import { ThemedText } from '@/components/themed-text'
 import { Button, Card, Loading, Notice, Screen } from '@/components/ui'
 import { Radius, Spacing } from '@/constants/theme'
@@ -19,6 +20,29 @@ import { daysLeft, formatDate } from '@/lib/format'
 import { buy, loadOffers, manageSubscriptions, onPurchaseEvent, restore, type StoreOffer } from '@/lib/purchases'
 
 const PLAN_TEXT = { maand: 'Per maand', kwartaal: 'Per 3 maanden', jaar: 'Per jaar' } as const
+const PLAN_TITLE = { maand: '1 maand', kwartaal: '3 maanden', jaar: '1 jaar' } as const
+const PLAN_NOTE = { maand: 'Ideaal voor één toetsweek', kwartaal: 'Een hele toetsperiode', jaar: 'Het hele schooljaar' } as const
+const PLAN_MONTHS = { maand: 1, kwartaal: 3, jaar: 12 } as const
+// Jaar bovenaan: het voordeligst, en dat willen we het eerst laten zien.
+const PLAN_ORDER = { jaar: 0, kwartaal: 1, maand: 2 } as const
+
+/** Wat er in elk abonnement zit (zelfde als op de website: alles zit er altijd in). */
+const BENEFITS = [
+  'Foto van je boek wordt een uittreksel, begrippen en flitskaarten',
+  'Oefenvragen op jouw niveau, ook hardop beantwoorden',
+  'Proeftoetsen met een cijfer, zodat je weet waar je staat',
+  'Herhaal precies wat je nog lastig vond',
+  'Geen reclame, je lessen blijven altijd bewaard',
+]
+
+/** Bedrag in de munt van de winkel, bv. "€ 5,00". */
+function money(amount: number, currency: string) {
+  try {
+    return new Intl.NumberFormat('nl-NL', { style: 'currency', currency }).format(amount)
+  } catch {
+    return amount.toFixed(2)
+  }
+}
 const TERMS_URL =
   Platform.OS === 'ios' ? 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/' : 'https://play.google.com/about/play-terms/'
 const STORE_TEXT = Platform.OS === 'ios' ? 'je Apple ID' : 'je Google-account'
@@ -27,6 +51,7 @@ export default function SubscriptionScreen() {
   const { me, refreshMe } = useAuth()
   const theme = useTheme()
   const [busy, setBusy] = useState(false)
+  const [picked, setPicked] = useState<StoreOffer['plan']>('jaar')
   const [message, setMessage] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null)
 
   // Bij openen opnieuw ophalen: een periode kan net zijn toegevoegd (bv. door een uitnodiging of de beheerder).
@@ -63,6 +88,10 @@ export default function SubscriptionScreen() {
   })
 
   if (!a) return null
+
+  const sorted = [...(offers.data?.offers ?? [])].sort((x, y) => PLAN_ORDER[x.plan] - PLAN_ORDER[y.plan])
+  const chosen = sorted.find((o) => o.plan === picked) ?? sorted[0]
+  const month = sorted.find((o) => o.plan === 'maand')
 
   const start = async (offer: StoreOffer) => {
     if (!offers.data) return
@@ -115,34 +144,80 @@ export default function SubscriptionScreen() {
 
       {canBuy ? (
         <>
-          <ThemedText style={styles.h2}>
-            {a.kind === 'actief' ? 'Daarna doorgaan met een abonnement' : 'Kies een abonnement'}
-          </ThemedText>
+          <Card style={{ borderColor: theme.primary }}>
+            <ThemedText style={styles.h2}>
+              {a.kind === 'actief' ? 'Daarna doorgaan met Studiemaat' : 'Leer slimmer voor je toetsen'}
+            </ThemedText>
+            {BENEFITS.map((b) => (
+              <View key={b} style={styles.benefit}>
+                <Icon name="checkmark.circle.fill" size={18} tintColor={theme.success} />
+                <ThemedText style={{ flex: 1 }}>{b}</ThemedText>
+              </View>
+            ))}
+          </Card>
           {offers.isLoading ? <Loading /> : null}
           {offers.isError ? <Notice>{(offers.error as Error).message}</Notice> : null}
-          {offers.data?.offers.map((o) => (
-            <Pressable
-              key={o.product.id}
-              accessibilityRole="button"
-              disabled={busy}
-              onPress={() => start(o)}
-              style={({ pressed }) => [
-                styles.offer,
-                { borderColor: o.plan === 'jaar' ? theme.primary : theme.border, backgroundColor: theme.backgroundElement },
-                (pressed || busy) && { opacity: 0.6 },
-              ]}>
-              <View style={{ flex: 1, gap: 2 }}>
-                <ThemedText style={{ fontWeight: 700, fontSize: 17 }}>{o.product.displayName || o.product.title}</ThemedText>
-                <ThemedText type="small" themeColor="textSecondary">
-                  {PLAN_TEXT[o.plan]}, automatisch verlengd
-                </ThemedText>
-              </View>
-              <ThemedText style={{ fontWeight: 800, fontSize: 18 }}>{o.product.displayPrice}</ThemedText>
-            </Pressable>
-          ))}
-          {busy ? <Loading /> : null}
+          {sorted.map((o) => {
+            const active = o.plan === chosen?.plan
+            const perMonth = o.product.price && o.plan !== 'maand' ? money(o.product.price / PLAN_MONTHS[o.plan], o.product.currency) : null
+            const save =
+              month?.product.price && o.product.price && o.plan !== 'maand'
+                ? Math.round((1 - o.product.price / (month.product.price * PLAN_MONTHS[o.plan])) * 100)
+                : 0
+            return (
+              <Pressable
+                key={o.product.id}
+                accessibilityRole="radio"
+                accessibilityState={{ selected: active }}
+                disabled={busy}
+                onPress={() => setPicked(o.plan)}
+                style={({ pressed }) => [
+                  styles.offer,
+                  {
+                    borderColor: active ? theme.primary : theme.border,
+                    backgroundColor: active ? theme.accent : theme.backgroundElement,
+                    borderWidth: active ? 2 : 1,
+                  },
+                  pressed && { opacity: 0.7 },
+                ]}>
+                {o.plan === 'jaar' ? (
+                  <View style={[styles.badge, { backgroundColor: theme.primary }]}>
+                    <ThemedText type="smallBold" style={{ color: theme.primaryForeground }}>
+                      Voordeligst
+                    </ThemedText>
+                  </View>
+                ) : null}
+                <Icon name={active ? 'checkmark.circle.fill' : 'circle'} size={22} tintColor={active ? theme.primary : theme.textSecondary} />
+                <View style={{ flex: 1, gap: 2 }}>
+                  <ThemedText style={{ fontWeight: 700, fontSize: 17 }}>{PLAN_TITLE[o.plan]}</ThemedText>
+                  <ThemedText type="small" themeColor="textSecondary">
+                    {PLAN_NOTE[o.plan]}
+                  </ThemedText>
+                  {save >= 5 ? (
+                    <ThemedText type="smallBold" style={{ color: theme.success }}>
+                      Bespaar {save}%
+                    </ThemedText>
+                  ) : null}
+                </View>
+                <View style={{ alignItems: 'flex-end' }}>
+                  <ThemedText style={{ fontWeight: 800, fontSize: 18 }}>{o.product.displayPrice}</ThemedText>
+                  <ThemedText type="small" themeColor="textSecondary">
+                    {perMonth ? `${perMonth} per maand` : PLAN_TEXT[o.plan].toLowerCase()}
+                  </ThemedText>
+                </View>
+              </Pressable>
+            )
+          })}
+          {chosen ? (
+            <Button
+              title={`Ga verder met ${PLAN_TITLE[chosen.plan]}`}
+              loading={busy}
+              onPress={() => start(chosen)}
+              style={{ paddingVertical: Spacing.four }}
+            />
+          ) : null}
           <ThemedText type="small" themeColor="textSecondary">
-            Je betaalt via {STORE_TEXT}. Het abonnement wordt automatisch verlengd voor dezelfde periode en prijs, tenzij je het
+            {chosen ? `${PLAN_TEXT[chosen.plan]} ${chosen.product.displayPrice}. ` : ''}Je betaalt via {STORE_TEXT}. Het abonnement wordt automatisch verlengd voor dezelfde periode en prijs, tenzij je het
             uiterlijk 24 uur voor het einde van de periode opzegt in de instellingen van je telefoon. Je lessen blijven altijd bewaard.
           </ThemedText>
           <View style={styles.links}>
@@ -162,7 +237,9 @@ export default function SubscriptionScreen() {
 }
 
 const styles = StyleSheet.create({
-  h2: { fontSize: 19, lineHeight: 26, fontWeight: 700 },
-  offer: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, borderWidth: 1.5, borderRadius: Radius.lg, padding: Spacing.three },
+  h2: { fontSize: 21, lineHeight: 28, fontWeight: 800 },
+  benefit: { flexDirection: 'row', gap: Spacing.two, alignItems: 'flex-start' },
+  offer: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, borderRadius: Radius.lg, padding: Spacing.three, paddingTop: Spacing.four },
+  badge: { position: 'absolute', top: -11, right: Spacing.three, borderRadius: 999, paddingHorizontal: Spacing.two, paddingVertical: 2 },
   links: { flexDirection: 'row', gap: Spacing.four },
 })

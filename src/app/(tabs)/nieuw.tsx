@@ -60,14 +60,11 @@ export default function NewLessonScreen() {
         <Card>
           <ThemedText type="smallBold">Zo maakt Studiemaat je les</ThemedText>
           <ThemedText>
-            Je foto&apos;s worden naar onze server gestuurd en daar door een AI (Claude, van het bedrijf Anthropic) gelezen. Die maakt
-            er een uittreksel, begrippen en vragen van. Ook je antwoorden op open vragen worden zo nagekeken.
+            Je foto&apos;s worden gedeeld met een AI-dienst die ze analyseert en er lesstof van maakt: een uittreksel, begrippen en
+            oefenvragen. Ook je antwoorden op open vragen worden zo nagekeken.
           </ThemedText>
-          <ThemedText>
-            Fotografeer alleen lesstof, geen gezichten of persoonlijke gegevens. In de privacyverklaring lees je wie je gegevens
-            verwerkt en hoe lang we ze bewaren.
-          </ThemedText>
-          <Button title="Lees de privacyverklaring" kind="ghost" onPress={() => Linking.openURL('https://www.studiemaat.nl/privacy')} />
+          <ThemedText>Fotografeer alleen lesstof, geen gezichten of persoonlijke gegevens.</ThemedText>
+          <Button title="Meer over privacy" kind="ghost" onPress={() => router.push('/privacy')} />
           <Button
             title="Ik snap het, ga verder"
             onPress={async () => {

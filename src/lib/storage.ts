@@ -74,3 +74,12 @@ export const clearLoginSecret = () => SecureStore.deleteItemAsync(LOGIN_SECRET_K
 /** Toestemming om foto's door een AI te laten verwerken (verplicht van Apple, eenmalig per installatie). */
 export const hasAiConsent = async () => (await SecureStore.getItemAsync(AI_CONSENT_KEY)) === 'ja'
 export const saveAiConsent = () => SecureStore.setItemAsync(AI_CONSENT_KEY, 'ja')
+
+/** Weergave van de app: automatisch (zoals de telefoon), licht of donker. Alleen op dit toestel. */
+export type Weergave = 'auto' | 'licht' | 'donker'
+const WEERGAVE_KEY = 'studiemaat_weergave'
+export async function getWeergave(): Promise<Weergave> {
+  const v = await SecureStore.getItemAsync(WEERGAVE_KEY)
+  return v === 'licht' || v === 'donker' ? v : 'auto'
+}
+export const saveWeergave = (v: Weergave) => SecureStore.setItemAsync(WEERGAVE_KEY, v)

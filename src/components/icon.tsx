@@ -150,6 +150,15 @@ const SF_TO_MATERIAL: Record<string, MaterialName> = {
   'questionmark.circle': 'help-outline',
   'slider.horizontal.3': 'tune',
   'plus': 'add',
+  'arrow.up.right.square': 'open-in-new',
+  envelope: 'mail-outline',
+  globe: 'language',
+  'doc.text': 'description',
+  'moon.fill': 'dark-mode',
+  'sun.max.fill': 'light-mode',
+  'iphone': 'smartphone',
+  'lock.shield': 'shield',
+  circle: 'radio-button-unchecked',
 };
 
 const FALLBACK_DEFAULT: MaterialName = 'circle';

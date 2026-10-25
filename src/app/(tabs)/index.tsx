@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { router } from 'expo-router'
-import { ActivityIndicator, RefreshControl, StyleSheet, View } from 'react-native'
+import { ActivityIndicator, StyleSheet, View } from 'react-native'
 
 import { createTest, fetchLessons } from '@/api'
 import type { LessonListItem } from '@/api'
@@ -11,6 +11,7 @@ import { ThemedText } from '@/components/themed-text'
 import { Button, Card, Loading, Notice, Screen, Title } from '@/components/ui'
 import { Spacing } from '@/constants/theme'
 import { useAuth } from '@/contexts/auth-context'
+import { usePullRefresh } from '@/hooks/use-pull-refresh'
 import { useTheme } from '@/hooks/use-theme'
 import { formatDate } from '@/lib/format'
 
@@ -39,8 +40,9 @@ export default function LessonsScreen() {
   const expired = me && !me.access.hasAccess
   const list = lessons.data ?? []
 
+  const refresh = usePullRefresh(lessons.refetch)
   return (
-    <Screen refreshControl={<RefreshControl refreshing={lessons.isRefetching} onRefresh={() => lessons.refetch()} />}>
+    <Screen refreshControl={refresh}>
       <Title sub={list.length ? 'Kies een les om te leren of jezelf te overhoren.' : undefined}>
         {name ? `Hoi ${name}` : 'Mijn lessen'}
       </Title>

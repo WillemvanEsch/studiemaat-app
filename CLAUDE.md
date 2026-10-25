@@ -56,11 +56,13 @@ iconen-wrapper, push en versie-check. Bij twijfel daar kijken hoe het is opgelos
     `abonnement`, `uitnodigen`, `verwijderen`)
   - `les/[id].tsx` — uittreksel, begrippen, flitskaarten, foto's, oefenen/proeftoets starten
   - `toets/[id].tsx` — overhoren en proeftoetsen, resultaat met cijfer
+  - `privacy.tsx`, `hulp.tsx` — privacy in het kort en hulp/contact; links naar buiten (site, mail) via `ListRow url=` met "naar buiten"-icoon
 - `src/api/` — alle calls naar de website. Componenten importeren uit `@/api`, nooit `fetch` in een scherm.
   `types.ts` spiegelt wat de website teruggeeft.
 - `src/contexts/auth-context.tsx` — `useAuth()`: status, `me`, inloggen, uitloggen.
-- `src/lib/` — `storage` (SecureStore), `push-notifications`, `purchases`, `photos`, `version`, `sentry`, `format`.
-- `src/components/` — `ui.tsx` (Screen, Card, Button, Field, Notice, Chips…), `icon.tsx`, `rich-text.tsx`,
+- `src/lib/` — `storage` (SecureStore), `push-notifications`, `purchases`, `photos`, `version`, `sentry`, `format`,
+  `appearance` (licht/donker/automatisch via `Appearance.setColorScheme`, keuze in Instellingen).
+- `src/components/` — `ui.tsx` (Screen, Card, Button, Field, Notice, Chips…), `list-row.tsx`, `icon.tsx`, `rich-text.tsx`,
   `flashcards.tsx`, `app-tabs.tsx`, `version-gate.tsx`.
 
 ## Inloggen
@@ -96,6 +98,11 @@ verstuurd. Geef dat account in Beheer "Altijd gratis".
 - Testen kan alleen op een echt toestel met een development/preview-build: iOS met een sandbox-account
   (App Store Connect → Gebruikers en toegang → Sandbox), Android met een licentietester in Play Console en de app in
   een testtrack. Sandbox-aankopen geven op de website ook toegang (notitie "(test)").
+
+## Uitnodigen
+
+`ik/uitnodigen`: delen van de persoonlijke link `shareUrl` (studiemaat.nl/vriend/<code>) via het deelmenu, of per mail.
+Wie via de link op de website een account maakt, krijgt de vriendenmaand (regels in studypro `auth.ts`/`invites.ts`).
 
 ## Push
 

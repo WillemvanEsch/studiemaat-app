@@ -4,7 +4,7 @@
  */
 
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Pressable, StyleSheet, View } from 'react-native'
 
 import { fetchOptions, updateMe } from '@/api'
@@ -15,6 +15,7 @@ import { Button, Card, Chips, Field, Loading, Notice, Screen } from '@/component
 import { Spacing } from '@/constants/theme'
 import { useAuth } from '@/contexts/auth-context'
 import { useTheme } from '@/hooks/use-theme'
+import { getWeergave, setWeergave, type Weergave } from '@/lib/appearance'
 
 export default function SettingsScreen() {
   const { me, setMe } = useAuth()
@@ -34,6 +35,12 @@ export default function SettingsScreen() {
   const [difficulty, setDifficulty] = useState<Difficulty>(me?.profile.difficulty ?? 'normaal')
   const [parts, setParts] = useState<ScanPart[]>(me?.scan.parts ?? ['uittreksel', 'begrippen', 'tabellen', 'vragen'])
   const [amount, setAmount] = useState<QuestionAmount>(me?.scan.questions ?? 'normaal')
+
+  // Weergave staat alleen op dit toestel en gaat meteen in (geen Opslaan nodig).
+  const [weergave, setWeergaveState] = useState<Weergave>('auto')
+  useEffect(() => {
+    getWeergave().then(setWeergaveState)
+  }, [])
 
   const save = useMutation({
     mutationFn: async () => {
@@ -127,6 +134,25 @@ export default function SettingsScreen() {
       {save.isSuccess ? <Notice kind="ok">Opgeslagen.</Notice> : null}
       {save.isError ? <Notice kind="error">{(save.error as Error).message}</Notice> : null}
       <Button title="Opslaan" loading={save.isPending} disabled={!name.trim() || !parts.length} onPress={() => save.mutate()} />
+
+      <Card>
+        <ThemedText type="smallBold">Weergave</ThemedText>
+        <Chips<Weergave>
+          options={[
+            { id: 'auto', label: 'Automatisch' },
+            { id: 'licht', label: 'Licht' },
+            { id: 'donker', label: 'Donker' },
+          ]}
+          value={weergave}
+          onChange={(v) => {
+            setWeergaveState(v)
+            setWeergave(v).catch(() => {})
+          }}
+        />
+        <ThemedText type="small" themeColor="textSecondary">
+          Automatisch volgt de instelling van je telefoon.
+        </ThemedText>
+      </Card>
     </Screen>
   )
 }
