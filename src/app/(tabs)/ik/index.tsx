@@ -35,7 +35,7 @@ export default function IkScreen() {
       <Card style={{ paddingVertical: Spacing.one, gap: 0 }}>
         <Row icon="slider.horizontal.3" label="Niveau en instellingen" href="/(tabs)/ik/instellingen" />
         <Row icon="person.badge.plus" label="Vriend uitnodigen" href="/(tabs)/ik/uitnodigen" />
-        <Row icon="hand.raised" label="Privacyverklaring" onPress={() => Linking.openURL('https://studiemaat.nl/privacy')} />
+        <Row icon="hand.raised" label="Privacyverklaring" onPress={() => Linking.openURL('https://www.studiemaat.nl/privacy')} />
         <Row icon="questionmark.circle" label="Hulp en contact" onPress={() => Linking.openURL('mailto:info@studiemaat.nl')} last />
       </Card>
 

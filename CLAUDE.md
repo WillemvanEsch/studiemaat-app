@@ -5,7 +5,7 @@ flitskaarten bekijken, overhoren (ook hardop) en proeftoetsen met cijfer. Alle t
 Eigenaar: Wim (Media Solutions B.V.).
 
 De app heeft **geen eigen database**. Alles gaat via de website-backend (repo `WillemvanEsch/studypro`) en zijn
-JSON-routes onder `https://studiemaat.nl/api/v1/mobile/*`. Zie de sectie "Koppeling voor de app" in de
+JSON-routes onder `https://www.studiemaat.nl/api/v1/mobile/*`. Zie de sectie "Koppeling voor de app" in de
 `CLAUDE.md` van studypro voor de routes en de regels daar.
 
 Opzet is bewust gelijk aan de bieden.nl-app (`MediaSolutionsBV/bieden-app`): zelfde stack, mappen, API-laag,
@@ -141,6 +141,6 @@ Bij twijfel: C.
 
 - Expo-project gekoppeld (25 okt 2026): projectId `decc02c6-9399-4684-bdde-529bbe739cb2`, slug `studiemaat`, staat in `app.json`.
 - App Store Connect: app `nl.studiemaat.app` aanmaken; Play Console: app `nl.studiemaat.app` aanmaken.
-- EAS env: `EXPO_PUBLIC_API_BASE_URL=https://studiemaat.nl/api/v1` (optioneel, valt terug op dat adres) en geheim `SENTRY_AUTH_TOKEN`.
+- EAS env: `EXPO_PUBLIC_API_BASE_URL=https://www.studiemaat.nl/api/v1` (optioneel, valt terug op dat adres; altijd met www, want het kale domein stuurt door en dan valt het Bearer-token weg) en geheim `SENTRY_AUTH_TOKEN`.
 - Vercel (studypro): `APP_REVIEW_EMAIL`, `APP_REVIEW_CODE`; firewall-uitzondering voor `/api/v1/mobile/*` als
   bot-bescherming aan staat.

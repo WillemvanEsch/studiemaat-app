@@ -67,7 +67,7 @@ export default function NewLessonScreen() {
             Fotografeer alleen lesstof, geen gezichten of persoonlijke gegevens. In de privacyverklaring lees je wie je gegevens
             verwerkt en hoe lang we ze bewaren.
           </ThemedText>
-          <Button title="Lees de privacyverklaring" kind="ghost" onPress={() => Linking.openURL('https://studiemaat.nl/privacy')} />
+          <Button title="Lees de privacyverklaring" kind="ghost" onPress={() => Linking.openURL('https://www.studiemaat.nl/privacy')} />
           <Button
             title="Ik snap het, ga verder"
             onPress={async () => {

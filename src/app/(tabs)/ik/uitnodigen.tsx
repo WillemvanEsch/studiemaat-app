@@ -68,7 +68,7 @@ export default function InviteScreen() {
           kind="ghost"
           icon="square.and.arrow.up"
           onPress={() =>
-            Share.share({ message: 'Ik leer voor mijn toetsen met Studiemaat: foto van je boek, en je krijgt een uittreksel en oefenvragen. https://studiemaat.nl' })
+            Share.share({ message: 'Ik leer voor mijn toetsen met Studiemaat: foto van je boek, en je krijgt een uittreksel en oefenvragen. https://www.studiemaat.nl' })
           }
         />
       </Card>

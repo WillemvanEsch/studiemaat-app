@@ -1,7 +1,7 @@
 # Studiemaat-app
 
-iOS- en Android-app van [Studiemaat](https://studiemaat.nl), gebouwd met Expo (React Native).
-De app praat met de website via `https://studiemaat.nl/api/v1/mobile/*`.
+iOS- en Android-app van [Studiemaat](https://www.studiemaat.nl), gebouwd met Expo (React Native).
+De app praat met de website via `https://www.studiemaat.nl/api/v1/mobile/*`.
 
 ```bash
 npm install

@@ -149,7 +149,7 @@ export default function SubscriptionScreen() {
             <ThemedText type="link" onPress={() => Linking.openURL(TERMS_URL)}>
               Gebruiksvoorwaarden
             </ThemedText>
-            <ThemedText type="link" onPress={() => Linking.openURL('https://studiemaat.nl/privacy')}>
+            <ThemedText type="link" onPress={() => Linking.openURL('https://www.studiemaat.nl/privacy')}>
               Privacyverklaring
             </ThemedText>
           </View>

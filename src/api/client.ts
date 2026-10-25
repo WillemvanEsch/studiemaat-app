@@ -16,7 +16,11 @@ import type { ApiResult } from './types'
 
 // Standaard de echte website; EXPO_PUBLIC_API_BASE_URL alleen zetten om tegen een andere server te testen.
 // (Bij bieden.nl crashte een build zonder deze variabele; hier valt hij terug op studiemaat.nl.)
-export const BASE_URL = (process.env.EXPO_PUBLIC_API_BASE_URL || 'https://studiemaat.nl/api/v1').replace(/\/$/, '')
+// Altijd www: studiemaat.nl stuurt door naar www.studiemaat.nl, en bij zo'n doorsturing laat de telefoon de
+// Authorization-header weg. Inloggen lukte dan wel, maar elk verzoek daarna gaf 401 en je stond weer bij inloggen.
+export const BASE_URL = (process.env.EXPO_PUBLIC_API_BASE_URL || 'https://www.studiemaat.nl/api/v1')
+  .replace(/\/$/, '')
+  .replace('://studiemaat.nl', '://www.studiemaat.nl')
 
 const NETWORK_ERROR = 'Geen verbinding. Controleer je internet en probeer het opnieuw.'
 
