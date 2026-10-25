@@ -36,10 +36,10 @@ iconen-wrapper, push en versie-check. Bij twijfel daar kijken hoe het is opgelos
 - `expo-speech-recognition` (hardop antwoorden, taal van de vraag) en `expo-speech` (vraag voorlezen).
 - `expo-notifications` voor push via Expo Push Service (APNs + FCM).
 - `expo-iap` (5.8.3) voor abonnementen via Apple/Google.
-- `@sentry/react-native` voor crashes (alleen met `EXPO_PUBLIC_SENTRY_DSN`, niet in `__DEV__`). Uploaden van source maps
-  staat uit (`SENTRY_DISABLE_AUTO_UPLOAD` in `eas.json`) tot er een Sentry-project is; anders faalt de iOS-build met
-  "An organization ID or slug is required". Aanzetten: organisatie/project in de Sentry-plugin in `app.json` en
-  `SENTRY_AUTH_TOKEN` als geheim in EAS, dan de regel uit `eas.json` halen.
+- `@sentry/react-native` voor crashes (niet in `__DEV__`). Sentry-organisatie `media-solutions-bv`, project
+  `studiemaat-app`, regio EU (`https://de.sentry.io/`, staat in de plugin in `app.json`). De DSN staat als terugval in
+  `src/lib/sentry.ts` (niet geheim); `EXPO_PUBLIC_SENTRY_DSN` in EAS gaat voor. Source maps uploaden lukt pas met
+  `SENTRY_AUTH_TOKEN` als geheim in EAS; zonder token gaat de build door dankzij `SENTRY_ALLOW_FAILURE` in `eas.json`.
 - `expo-updates` voor OTA-updates (`runtimeVersion.policy = appVersion`).
 - Geen Tailwind/NativeWind: kleuren en maten uit `src/constants/theme.ts` via `useTheme()`. Nooit een hex in een
   component.
@@ -141,6 +141,6 @@ Bij twijfel: C.
 
 - Expo-project gekoppeld (25 okt 2026): projectId `decc02c6-9399-4684-bdde-529bbe739cb2`, slug `studiemaat`, staat in `app.json`.
 - App Store Connect: app `nl.studiemaat.app` aanmaken; Play Console: app `nl.studiemaat.app` aanmaken.
-- EAS env: `EXPO_PUBLIC_API_BASE_URL=https://studiemaat.nl/api/v1`, `EXPO_PUBLIC_SENTRY_DSN`.
+- EAS env: `EXPO_PUBLIC_API_BASE_URL=https://studiemaat.nl/api/v1` (optioneel, valt terug op dat adres) en geheim `SENTRY_AUTH_TOKEN`.
 - Vercel (studypro): `APP_REVIEW_EMAIL`, `APP_REVIEW_CODE`; firewall-uitzondering voor `/api/v1/mobile/*` als
   bot-bescherming aan staat.

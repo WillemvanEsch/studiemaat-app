@@ -16,15 +16,17 @@
  * with our own dev crashes. Also skipped if no DSN is set (e.g. local
  * Metro without env) so a missing config never blocks app startup.
  *
- * The DSN is project-specific — get it from sentry.io after creating
- * the project, set as EXPO_PUBLIC_SENTRY_DSN in EAS env (preview +
- * production).
+ * De DSN is niet geheim (hij zit in elke app-bundel). EXPO_PUBLIC_SENTRY_DSN
+ * in EAS gaat voor; anders gebruiken we de DSN van project studiemaat-app
+ * (organisatie media-solutions-bv, Sentry-regio EU).
  */
 
 import * as Sentry from '@sentry/react-native'
 import Constants from 'expo-constants'
 
-const dsn = process.env.EXPO_PUBLIC_SENTRY_DSN
+const dsn =
+  process.env.EXPO_PUBLIC_SENTRY_DSN ||
+  'https://89373df3701a0805e9f4e10ab09ad398@o4511458098085888.ingest.de.sentry.io/4512317567860816'
 
 let initialized = false
 

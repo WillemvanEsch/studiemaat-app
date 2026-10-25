@@ -90,7 +90,14 @@
           "icon": "./assets/images/notification-icon.png"
         }
       ],
-      "@sentry/react-native",
+      [
+        "@sentry/react-native",
+        {
+          "organization": "media-solutions-bv",
+          "project": "studiemaat-app",
+          "url": "https://de.sentry.io/"
+        }
+      ],
       "expo-iap"
     ],
     "experiments": {
