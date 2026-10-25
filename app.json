@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Studiemaat",
-    "slug": "studiemaat-app",
+    "slug": "studiemaat",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -97,11 +97,17 @@
       "reactCompiler": true
     },
     "extra": {
-      "router": {}
+      "router": {},
+      "eas": {
+        "projectId": "decc02c6-9399-4684-bdde-529bbe739cb2"
+      }
     },
     "owner": "mediasolutions",
     "runtimeVersion": {
       "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/decc02c6-9399-4684-bdde-529bbe739cb2"
     }
   }
 }

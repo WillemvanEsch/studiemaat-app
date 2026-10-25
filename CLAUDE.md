@@ -134,7 +134,7 @@ Bij twijfel: C.
 
 ## Eerste keer instellen (nog te doen, okt 2026)
 
-- `eas init` (Expo-owner `mediasolutions`) → zet `extra.eas.projectId` en `updates.url` in `app.json`.
+- Expo-project gekoppeld (25 okt 2026): projectId `decc02c6-9399-4684-bdde-529bbe739cb2`, slug `studiemaat`, staat in `app.json`.
 - App Store Connect: app `nl.studiemaat.app` aanmaken; Play Console: app `nl.studiemaat.app` aanmaken.
 - EAS env: `EXPO_PUBLIC_API_BASE_URL=https://studiemaat.nl/api/v1`, `EXPO_PUBLIC_SENTRY_DSN`.
 - Vercel (studypro): `APP_REVIEW_EMAIL`, `APP_REVIEW_CODE`; firewall-uitzondering voor `/api/v1/mobile/*` als
