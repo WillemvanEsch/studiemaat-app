@@ -21,6 +21,7 @@ import {
 } from '@/api'
 import type { ApiResult, Me } from '@/api'
 import { setupPushNotifications, tearDownPushNotifications } from '@/lib/push-notifications'
+import { startPurchases, stopPurchases } from '@/lib/purchases'
 import { clearLoginSecret, clearSession, getMe, getToken, loginSecret, saveMe, saveSession } from '@/lib/storage'
 
 export type AuthStatus = 'loading' | 'authenticated' | 'unauthenticated'
@@ -114,6 +115,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await saveMe(next)
     setMeState(next)
   }, [])
+
+  // Aankopen in de app: alleen luisteren als er iemand is ingelogd (de aankoop moet aan een account gekoppeld worden).
+  // Onafgeronde aankopen (bv. app gesloten tijdens het betalen) komen dan alsnog binnen.
+  useEffect(() => {
+    if (status === 'authenticated') startPurchases((next) => void setMe(next))
+    else if (status === 'unauthenticated') stopPurchases()
+  }, [status, setMe])
 
   const value = useMemo<AuthContextValue>(
     () => ({ status, me, requestCode, verifyCode, logout, refreshMe, setMe }),

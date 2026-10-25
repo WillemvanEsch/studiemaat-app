@@ -10,7 +10,10 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "nl.studiemaat.app",
-      "associatedDomains": ["applinks:studiemaat.nl", "applinks:www.studiemaat.nl"],
+      "associatedDomains": [
+        "applinks:studiemaat.nl",
+        "applinks:www.studiemaat.nl"
+      ],
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "LSApplicationCategoryType": "public.app-category.education",
@@ -27,16 +30,28 @@
         "foregroundImage": "./assets/images/android-icon-foreground.png"
       },
       "predictiveBackGestureEnabled": false,
-      "permissions": ["android.permission.CAMERA", "android.permission.RECORD_AUDIO"],
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ],
       "intentFilters": [
         {
           "action": "VIEW",
           "autoVerify": true,
           "data": [
-            { "scheme": "https", "host": "studiemaat.nl" },
-            { "scheme": "https", "host": "www.studiemaat.nl" }
+            {
+              "scheme": "https",
+              "host": "studiemaat.nl"
+            },
+            {
+              "scheme": "https",
+              "host": "www.studiemaat.nl"
+            }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ]
     },
@@ -48,7 +63,9 @@
           "backgroundColor": "#F7F4EE",
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 200,
-          "dark": { "backgroundColor": "#0E1614" }
+          "dark": {
+            "backgroundColor": "#0E1614"
+          }
         }
       ],
       "expo-secure-store",
@@ -66,8 +83,14 @@
           "speechRecognitionPermission": "Studiemaat zet je gesproken antwoord om in tekst."
         }
       ],
-      ["expo-notifications", { "color": "#25916F" }],
-      "@sentry/react-native"
+      [
+        "expo-notifications",
+        {
+          "color": "#25916F"
+        }
+      ],
+      "@sentry/react-native",
+      "expo-iap"
     ],
     "experiments": {
       "typedRoutes": true,

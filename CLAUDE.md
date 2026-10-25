@@ -35,6 +35,7 @@ iconen-wrapper, push en versie-check. Bij twijfel daar kijken hoe het is opgelos
   4 MB per upload die Vercel toestaat).
 - `expo-speech-recognition` (hardop antwoorden, taal van de vraag) en `expo-speech` (vraag voorlezen).
 - `expo-notifications` voor push via Expo Push Service (APNs + FCM).
+- `expo-iap` (5.8.3) voor abonnementen via Apple/Google.
 - `@sentry/react-native` voor crashes (alleen met `EXPO_PUBLIC_SENTRY_DSN`, niet in `__DEV__`).
 - `expo-updates` voor OTA-updates (`runtimeVersion.policy = appVersion`).
 - Geen Tailwind/NativeWind: kleuren en maten uit `src/constants/theme.ts` via `useTheme()`. Nooit een hex in een
@@ -53,7 +54,7 @@ iconen-wrapper, push en versie-check. Bij twijfel daar kijken hoe het is opgelos
 - `src/api/` — alle calls naar de website. Componenten importeren uit `@/api`, nooit `fetch` in een scherm.
   `types.ts` spiegelt wat de website teruggeeft.
 - `src/contexts/auth-context.tsx` — `useAuth()`: status, `me`, inloggen, uitloggen.
-- `src/lib/` — `storage` (SecureStore), `push-notifications`, `photos`, `version`, `sentry`, `format`.
+- `src/lib/` — `storage` (SecureStore), `push-notifications`, `purchases`, `photos`, `version`, `sentry`, `format`.
 - `src/components/` — `ui.tsx` (Screen, Card, Button, Field, Notice, Chips…), `icon.tsx`, `rich-text.tsx`,
   `flashcards.tsx`, `app-tabs.tsx`, `version-gate.tsx`.
 
@@ -78,8 +79,18 @@ verstuurd. Geef dat account in Beheer "Altijd gratis".
   verlengend, ook maandelijks). Pay.nl blijft alleen op de website. Wie op de website betaalde, logt gewoon in.
 - **De app verwijst nooit naar de website om te betalen** (geen links, knoppen of teksten als "koop op
   studiemaat.nl"); anders gelden Apple's link-out-regels en -kosten.
-- In-app aankopen zijn nog niet gebouwd (gepland: RevenueCat + webhook op de website die een periode in
-  `subscriptions` zet). Tot die tijd toont `ik/abonnement` alleen de status.
+- In-app aankopen: **zelf gebouwd** (Wim, 25 okt 2026: geen RevenueCat) met `expo-iap` (vastgezet op 5.8.3), in
+  `src/lib/purchases.ts`. Producten `studiemaat_maand`, `studiemaat_kwartaal`, `studiemaat_jaar` (codes komen van
+  `/mobile/store`, prijzen van de winkel zelf). Bij een aankoop gaat `accountId` mee (iOS `appAccountToken`, Android
+  `obfuscatedAccountId`). Na de aankoop melden we hem aan de website (`/mobile/store/purchase`), die hem bij
+  Apple/Google controleert; pas daarna `finishTransaction`. Bij een storing niet afronden: de winkel biedt hem bij de
+  volgende start opnieuw aan (luisteren start in `auth-context` zodra je bent ingelogd).
+- `ik/abonnement`: status, abonnementen kopen (alleen als je geen doorlopend winkelabonnement hebt), "Aankopen
+  herstellen" (verplicht bij Apple), "Abonnement beheren" (instellingen van de telefoon), en de verplichte tekst over
+  automatisch verlengen met links naar gebruiksvoorwaarden en privacy.
+- Testen kan alleen op een echt toestel met een development/preview-build: iOS met een sandbox-account
+  (App Store Connect → Gebruikers en toegang → Sandbox), Android met een licentietester in Play Console en de app in
+  een testtrack. Sandbox-aankopen geven op de website ook toegang (notitie "(test)").
 
 ## Push
 
@@ -102,7 +113,7 @@ aanbevolen = balk bovenin. `APP_STORE_URL` in `src/lib/version.ts` moet het echt
 - Toestemming vóór het eerste versturen van foto's naar de AI (Apple 5.1.2(i)), in `(tabs)/nieuw.tsx`.
 - Reviewer-testaccount (zie Inloggen).
 - Google Play: doelgroep inclusief kinderen onder 13 → Families-beleid, geen advertenties/analytics.
-- Herstel aankopen-knop zodra in-app aankopen er zijn.
+- "Aankopen herstellen"-knop en de tekst over automatisch verlengen staan in `ik/abonnement`.
 
 ## Commando's
 

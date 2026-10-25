@@ -11,10 +11,26 @@ export interface ApiError {
   message: string
 }
 
+/** store: abonnement via de App Store of Google Play (opzeggen in de telefoon), anders null/afwezig. */
 export type Access =
-  | { kind: 'gratis'; hasAccess: boolean; label: string | null }
-  | { kind: 'actief'; plan: string; until: string; cancelled?: boolean; hasAccess: boolean; label: string | null }
-  | { kind: 'verlopen'; plan: string | null; until: string | null; hasAccess: boolean; label: string | null }
+  | { kind: 'gratis'; hasAccess: boolean; label: string | null; store?: null }
+  | { kind: 'actief'; plan: string; until: string; cancelled?: boolean; hasAccess: boolean; label: string | null; store?: StoreName | null }
+  | { kind: 'verlopen'; plan: string | null; until: string | null; hasAccess: boolean; label: string | null; store?: null }
+
+export type StoreName = 'apple' | 'google'
+
+/** GET /mobile/store */
+export interface StoreInfo {
+  products: { productId: string; plan: 'maand' | 'kwartaal' | 'jaar' }[]
+  /** Vaste UUID van dit account; gaat mee als appAccountToken (iOS) / obfuscatedAccountId (Android). */
+  accountId: string
+  available: { apple: boolean; google: boolean }
+}
+
+/** POST /mobile/store/purchase */
+export type PurchaseResult =
+  | { ok: true; active: boolean; me: Me | null }
+  | { ok: false; reason: 'not_configured' | 'not_found' | 'unknown_product' | 'unknown_user' | 'other_account' | 'wrong_app'; message: string }
 
 export type Difficulty = 'makkelijker' | 'normaal' | 'uitdagend'
 export type ScanPart = 'uittreksel' | 'begrippen' | 'tabellen' | 'vragen'
