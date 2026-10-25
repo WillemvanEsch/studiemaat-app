@@ -117,6 +117,8 @@ aanbevolen = balk bovenin. `APP_STORE_URL` in `src/lib/version.ts` moet het echt
 
 ## Commando's
 
+- Inloggen bij Expo: Wim gebruikt een Google-account (geen wachtwoord), dus `eas login --device` (link + code, inloggen in
+  de browser). Controleren met `eas whoami`.
 - `npm start` — Metro voor de dev build (`--dev-client`; Expo Go werkt niet met onze native modules)
 - `npm run ios` / `npm run android`
 - `npm run lint` — `expo lint`
