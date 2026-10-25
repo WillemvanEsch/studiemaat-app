@@ -14,9 +14,9 @@ import { Platform } from 'react-native'
 
 import type { VersionCheck } from '@/api'
 
-// Waar de knop "Bijwerken" heen gaat. Zet de App Store-ID erin zodra App Store Connect die heeft gegeven
-// (formaat https://apps.apple.com/nl/app/id<nummer>). Android: de Play Store-pagina van nl.studiemaat.app.
-const IOS_STORE_URL = 'https://apps.apple.com/nl/search?term=studiemaat'
+// Waar de knop "Bijwerken" heen gaat: de App Store-pagina (Apple ID 6826899921 in App Store Connect).
+// Android: de Play Store-pagina van nl.studiemaat.app.
+const IOS_STORE_URL = 'https://apps.apple.com/nl/app/id6826899921'
 const ANDROID_STORE_URL = 'https://play.google.com/store/apps/details?id=nl.studiemaat.app'
 export const APP_STORE_URL = Platform.OS === 'android' ? ANDROID_STORE_URL : IOS_STORE_URL
 

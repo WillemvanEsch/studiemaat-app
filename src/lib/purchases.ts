@@ -125,6 +125,9 @@ export async function loadOffers(): Promise<{ info: StoreInfo; offers: StoreOffe
   const offers = info.data.products
     .map((p) => ({ plan: p.plan, product: products.find((x) => x.id === p.productId) }))
     .filter((o): o is StoreOffer => !!o.product)
+  // Geeft de winkel niets terug (abonnementen nog niet goedgekeurd, of geen verbinding met de winkel),
+  // dan liever een melding dan een leeg scherm.
+  if (!offers.length) return { error: 'De abonnementen konden niet worden geladen. Probeer het later nog eens.' }
   return { info: info.data, offers }
 }
 
