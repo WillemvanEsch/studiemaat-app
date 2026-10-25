@@ -14,11 +14,9 @@
 import { clearSession, getDeviceId, getToken } from '@/lib/storage'
 import type { ApiResult } from './types'
 
-export const BASE_URL = (process.env.EXPO_PUBLIC_API_BASE_URL ?? '').replace(/\/$/, '')
-
-if (!BASE_URL && __DEV__) {
-  console.warn('[api] EXPO_PUBLIC_API_BASE_URL ontbreekt — kijk in .env (of .env.local).')
-}
+// Standaard de echte website; EXPO_PUBLIC_API_BASE_URL alleen zetten om tegen een andere server te testen.
+// (Bij bieden.nl crashte een build zonder deze variabele; hier valt hij terug op studiemaat.nl.)
+export const BASE_URL = (process.env.EXPO_PUBLIC_API_BASE_URL || 'https://studiemaat.nl/api/v1').replace(/\/$/, '')
 
 const NETWORK_ERROR = 'Geen verbinding. Controleer je internet en probeer het opnieuw.'
 
