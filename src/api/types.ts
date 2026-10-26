@@ -12,10 +12,38 @@ export interface ApiError {
 }
 
 /** store: abonnement via de App Store of Google Play (opzeggen in de telefoon), anders null/afwezig. */
+/** Eén periode uit de stapel die nu loopt of nog komt (proefweek, losse periode van de website, abonnement uit de app). */
+export interface Period {
+  plan: string
+  label: string
+  startsAt: string
+  endsAt: string
+  running: boolean
+  paid: boolean
+  /** Gekocht in de app (App Store/Google Play): doorlopend abonnement. Anders null (website, gratis of beheerder). */
+  store: StoreName | null
+  /** Winkelabonnement dat automatisch verlengt (niet opgezegd in de telefoon). */
+  autoRenew: boolean
+  cancelled: boolean
+}
+
+/** Lopend abonnement uit de app, ook als er daarnaast een periode van de website loopt. */
+export interface StoreSubscription {
+  store: StoreName
+  plan: string
+  label: string
+  /** Volgende verlenging, of het einde als automatisch verlengen uit staat. */
+  until: string
+  autoRenew: boolean
+}
+
+// periods en storeSubscription zijn later toegevoegd (okt 2026); oudere versies van de website sturen ze niet.
+type AccessExtra = { hasAccess: boolean; label: string | null; periods?: Period[]; storeSubscription?: StoreSubscription | null }
+
 export type Access =
-  | { kind: 'gratis'; hasAccess: boolean; label: string | null; store?: null }
-  | { kind: 'actief'; plan: string; until: string; cancelled?: boolean; hasAccess: boolean; label: string | null; store?: StoreName | null }
-  | { kind: 'verlopen'; plan: string | null; until: string | null; hasAccess: boolean; label: string | null; store?: null }
+  | ({ kind: 'gratis'; store?: null } & AccessExtra)
+  | ({ kind: 'actief'; plan: string; until: string; cancelled?: boolean; store?: StoreName | null } & AccessExtra)
+  | ({ kind: 'verlopen'; plan: string | null; until: string | null; store?: null } & AccessExtra)
 
 export type StoreName = 'apple' | 'google'
 

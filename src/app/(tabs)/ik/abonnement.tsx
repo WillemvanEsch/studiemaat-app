@@ -16,8 +16,9 @@ import { Button, Card, Loading, Notice, Screen } from '@/components/ui'
 import { DisplayFont, Radius, Spacing } from '@/constants/theme'
 import { useAuth } from '@/contexts/auth-context'
 import { useTheme } from '@/hooks/use-theme'
-import { daysLeft, formatDate } from '@/lib/format'
+import { formatDate } from '@/lib/format'
 import { buy, loadOffers, manageSubscriptions, onPurchaseEvent, restore, type StoreOffer } from '@/lib/purchases'
+import { subscriptionView } from '@/lib/subscription'
 
 const PLAN_TEXT = { maand: 'Per maand', kwartaal: 'Per 3 maanden', jaar: 'Per jaar' } as const
 const PLAN_TITLE = { maand: '1 maand', kwartaal: '3 maanden', jaar: '1 jaar' } as const
@@ -73,8 +74,9 @@ export default function SubscriptionScreen() {
   )
 
   const a = me?.access
-  // Alleen tonen als je nu geen (doorlopend) abonnement hebt: dubbel betalen willen we niet.
-  const canBuy = !!a && a.kind !== 'gratis' && !(a.kind === 'actief' && a.store && !a.cancelled)
+  // Wat we laten zien en of er iets te koop is (geen dubbel betalen), zie lib/subscription.
+  const view = a ? subscriptionView(a) : null
+  const canBuy = !!view?.canBuy
   const offers = useQuery({
     queryKey: ['store-offers'],
     queryFn: async () => {
@@ -87,7 +89,7 @@ export default function SubscriptionScreen() {
     retry: false,
   })
 
-  if (!a) return null
+  if (!a || !view) return null
 
   const sorted = [...(offers.data?.offers ?? [])].sort((x, y) => PLAN_ORDER[x.plan] - PLAN_ORDER[y.plan])
   const chosen = sorted.find((o) => o.plan === picked) ?? sorted[0]
@@ -121,33 +123,46 @@ export default function SubscriptionScreen() {
     <Screen edges={[]}>
       <Card>
         <ThemedText type="smallBold">Je hebt nu</ThemedText>
-        <ThemedText style={{ fontSize: 24, lineHeight: 30, fontFamily: DisplayFont.extraBold }}>
-          {a.kind === 'gratis' ? 'Altijd gratis' : (a.label ?? (a.kind === 'actief' ? 'Actief' : 'Geen abonnement'))}
-        </ThemedText>
-        <ThemedText themeColor="textSecondary">
-          {a.kind === 'gratis'
-            ? 'Je kunt Studiemaat voor altijd gratis gebruiken.'
-            : a.kind === 'actief'
-              ? a.store && !a.cancelled
-                ? `Wordt automatisch verlengd. Volgende verlenging op ${formatDate(a.until)}.`
-                : `${a.cancelled ? 'Opgezegd, loopt' : 'Loopt'} tot en met ${formatDate(a.until)} (nog ${daysLeft(a.until)} dagen).`
-              : a.until
-                ? `Afgelopen op ${formatDate(a.until)}. Je lessen en toetsen blijven bewaard.`
-                : 'Je lessen en toetsen blijven bewaard.'}
-        </ThemedText>
-        {a.kind === 'actief' && a.store ? (
+        <ThemedText style={{ fontSize: 24, lineHeight: 30, fontFamily: DisplayFont.extraBold }}>{view.title}</ThemedText>
+        <ThemedText themeColor="textSecondary">{view.line}</ThemedText>
+        {view.periods.length ? (
+          <View style={[styles.periods, { borderColor: theme.border }]}>
+            {view.periods.map((p, i) => (
+              <View key={`${p.plan}-${p.startsAt}`} style={[styles.period, i ? { borderTopWidth: 1, borderColor: theme.border } : null]}>
+                <View style={[styles.when, { backgroundColor: p.running ? theme.successSoft : theme.background }]}>
+                  <ThemedText type="small" style={{ fontWeight: 700, color: p.running ? theme.success : theme.textSecondary }}>
+                    {p.running ? 'Nu' : 'Daarna'}
+                  </ThemedText>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <ThemedText style={{ fontWeight: 700 }}>{p.label}</ThemedText>
+                  <ThemedText type="small" themeColor="textSecondary">
+                    {p.store
+                      ? p.autoRenew
+                        ? `Verlengt automatisch op ${formatDate(p.endsAt)}`
+                        : `Tot en met ${formatDate(p.endsAt)}, verlengen staat uit`
+                      : `${formatDate(p.startsAt)} t/m ${formatDate(p.endsAt)}${p.cancelled ? ', opgezegd' : ''}`}
+                  </ThemedText>
+                </View>
+              </View>
+            ))}
+          </View>
+        ) : null}
+        {view.storeSub ? (
           <Button title="Abonnement beheren of opzeggen" kind="ghost" onPress={() => manageSubscriptions().catch(() => {})} />
         ) : null}
       </Card>
 
+      {view.buyNote && !canBuy ? <Notice>{view.buyNote}</Notice> : null}
       {message ? <Notice kind={message.kind}>{message.text}</Notice> : null}
 
       {canBuy ? (
         <>
           <Card style={{ borderColor: theme.primary }}>
             <ThemedText style={styles.h2}>
-              {a.kind === 'actief' ? 'Daarna doorgaan met Studiemaat' : 'Leer slimmer voor je toetsen'}
+              {a.kind === 'actief' && view.endingSoon && !view.endingSoon.free ? 'Verlengen' : 'Leer slimmer voor je toetsen'}
             </ThemedText>
+            {view.buyNote ? <ThemedText themeColor="textSecondary">{view.buyNote}</ThemedText> : null}
             {BENEFITS.map((b) => (
               <View key={b} style={styles.benefit}>
                 <Icon name="checkmark.circle.fill" size={18} tintColor={theme.success} />
@@ -242,4 +257,7 @@ const styles = StyleSheet.create({
   offer: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, borderRadius: Radius.lg, padding: Spacing.three, paddingTop: Spacing.four },
   badge: { position: 'absolute', top: -11, right: Spacing.three, borderRadius: 999, paddingHorizontal: Spacing.two, paddingVertical: 2 },
   links: { flexDirection: 'row', gap: Spacing.four },
+  periods: { borderWidth: 1, borderRadius: Radius.md, marginTop: Spacing.one },
+  period: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, padding: Spacing.three },
+  when: { borderRadius: 999, paddingHorizontal: Spacing.two, paddingVertical: 2 },
 })

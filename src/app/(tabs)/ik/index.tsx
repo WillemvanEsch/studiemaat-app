@@ -10,9 +10,11 @@ import { Card, Screen, Title } from '@/components/ui'
 import { Spacing } from '@/constants/theme'
 import { useAuth } from '@/contexts/auth-context'
 import { useTheme } from '@/hooks/use-theme'
+import { subscriptionView } from '@/lib/subscription'
 
 export default function IkScreen() {
   const { me, logout } = useAuth()
+  const sub = me ? subscriptionView(me.access) : null
   const theme = useTheme()
 
   const signOut = () =>
@@ -28,8 +30,13 @@ export default function IkScreen() {
       <Card onPress={() => router.push('/(tabs)/ik/abonnement')}>
         <ThemedText type="smallBold">Abonnement</ThemedText>
         <ThemedText themeColor={me?.access.hasAccess ? 'text' : 'textSecondary'}>
-          {me?.access.label ?? (me?.access.hasAccess ? 'Actief' : 'Geen actief abonnement')}
+          {sub ? sub.title : me?.access.hasAccess ? 'Actief' : 'Geen actief abonnement'}
         </ThemedText>
+        {sub && me?.access.kind === 'actief' ? (
+          <ThemedText type="small" themeColor="textSecondary">
+            {sub.line}
+          </ThemedText>
+        ) : null}
       </Card>
 
       <Card style={{ paddingVertical: Spacing.one, gap: 0 }}>

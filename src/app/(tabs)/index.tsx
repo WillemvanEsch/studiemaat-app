@@ -19,6 +19,7 @@ import { DisplayFont, Radius, Spacing } from '@/constants/theme'
 import { useAuth } from '@/contexts/auth-context'
 import { usePullRefresh } from '@/hooks/use-pull-refresh'
 import { useTheme } from '@/hooks/use-theme'
+import { subscriptionView } from '@/lib/subscription'
 import { formatDate, gradeText, gradeTone, todayText } from '@/lib/format'
 
 export default function LessonsScreen() {
@@ -55,6 +56,8 @@ export default function LessonsScreen() {
 
   const name = me?.user.name ?? ''
   const expired = me && !me.access.hasAccess
+  // Loopt binnenkort af en verlengt niet vanzelf: één rustige regel met "Verlengen" (geen muur).
+  const ending = me && !expired ? subscriptionView(me.access).endingSoon : null
   const list = lessons.data ?? []
   const done = (tests.data ?? []).filter((t) => t.finishedAt)
   const graded = done.filter((t) => t.mode === 'proeftoets' && t.grade !== null)
@@ -100,6 +103,16 @@ export default function LessonsScreen() {
           <ThemedText type="smallBold">Je gratis periode of abonnement is afgelopen</ThemedText>
           <ThemedText type="small">Je lessen blijven bewaard. Kies een abonnement om verder te leren.</ThemedText>
           <Button title="Bekijk abonnementen" kind="secondary" onPress={() => router.push('/(tabs)/ik/abonnement')} />
+        </Notice>
+      ) : null}
+
+      {ending ? (
+        <Notice>
+          <ThemedText type="small">
+            {ending.free ? 'Je gratis periode' : 'Je abonnement'} loopt{' '}
+            {ending.days === 0 ? 'vandaag' : ending.days === 1 ? 'morgen' : `over ${ending.days} dagen`} af.
+          </ThemedText>
+          <Button title={ending.free ? 'Abonnement kiezen' : 'Verlengen'} kind="secondary" onPress={() => router.push('/(tabs)/ik/abonnement')} />
         </Notice>
       ) : null}
 
