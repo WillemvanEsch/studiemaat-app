@@ -21,6 +21,7 @@ import { Icon } from '@/components/icon'
 import { useState } from 'react'
 import {
   Linking,
+  Platform,
   Pressable,
   StyleSheet,
   View,
@@ -93,7 +94,7 @@ function ForceUpdateScreen({
               pressed && { opacity: 0.85 },
             ]}>
             <ThemedText style={[styles.fsButtonText, { color: theme.primaryForeground }]}>
-              Open App Store
+              {Platform.OS === 'android' ? 'Open Google Play' : 'Open de App Store'}
             </ThemedText>
           </Pressable>
 

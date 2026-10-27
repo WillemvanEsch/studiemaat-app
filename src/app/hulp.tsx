@@ -4,6 +4,7 @@ import Constants from 'expo-constants'
 import { StyleSheet, View } from 'react-native'
 
 import { ListRow } from '@/components/list-row'
+import { STORE_NAME } from '@/lib/version'
 import { ThemedText } from '@/components/themed-text'
 import { Card, Screen } from '@/components/ui'
 import { Spacing } from '@/constants/theme'
@@ -13,7 +14,7 @@ const FAQ: [string, string][] = [
   ['Hoe lang duurt het maken van een les?', 'Meestal 1 tot 3 minuten. Je krijgt een melding als hij klaar is, ook als je de app hebt dichtgedaan.'],
   ['Mijn les is niet gelukt', 'Open de les en tik op opnieuw proberen. Lukt het weer niet? Maak scherpe foto\'s bij goed licht, met de tekst recht in beeld.'],
   ['Kan ik meer vragen krijgen?', 'Ja. Open een les en tik op Maak nieuwe vragen. Hoeveel vragen een toets heeft, stel je in onder Ik → Niveau en instellingen.'],
-  ['Hoe zeg ik mijn abonnement op?', 'Een abonnement uit de app zeg je op in de instellingen van je telefoon (App Store of Google Play). Onder Ik → Abonnement staat een knop daarheen.'],
+  ['Hoe zeg ik mijn abonnement op?', `Een abonnement uit de app zeg je op in de instellingen van je telefoon (${STORE_NAME}). Onder Ik → Abonnement staat een knop daarheen.`],
 ]
 
 export default function HulpScreen() {

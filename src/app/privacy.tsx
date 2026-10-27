@@ -6,6 +6,7 @@
 import { StyleSheet, View } from 'react-native'
 
 import { ListRow } from '@/components/list-row'
+import { STORE_NAME } from '@/lib/version'
 import { ThemedText } from '@/components/themed-text'
 import { Card, Screen } from '@/components/ui'
 import { Spacing } from '@/constants/theme'
@@ -15,7 +16,7 @@ const POINTS: [string, string][] = [
   ['Waarvoor', 'Alleen om Studiemaat te laten werken: je account, je lessen, het nakijken en je abonnement. We verkopen niets door.'],
   ['AI', 'Je foto\'s en antwoorden worden door een AI-dienst geanalyseerd om je lesstof en vragen te maken en na te kijken. Die mag ze niet voor iets anders gebruiken.'],
   ['Geen reclame', 'In de app zitten geen advertenties en geen trackers. Alleen als de app vastloopt, krijgen we een technische foutmelding.'],
-  ['Betalen', 'Een abonnement in de app loopt via Apple of Google. Wij zien je betaalgegevens niet.'],
+  ['Betalen', `Een abonnement in de app loopt via ${STORE_NAME}. Wij zien je betaalgegevens niet.`],
   ['Weg ermee', 'Je kunt je account en alles wat erbij hoort zelf verwijderen, onder Ik → Account verwijderen.'],
 ]
 

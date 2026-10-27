@@ -7,6 +7,7 @@ import { useMutation } from '@tanstack/react-query'
 import { useState } from 'react'
 
 import { deleteAccount } from '@/api'
+import { STORE_NAME } from '@/lib/version'
 import { ThemedText } from '@/components/themed-text'
 import { DisplayFont } from '@/constants/theme'
 import { Button, Card, Field, Notice, Screen } from '@/components/ui'
@@ -42,7 +43,7 @@ export default function DeleteAccountScreen() {
           Je account, je lessen, je foto’s en je toetsresultaten worden definitief verwijderd. Dit kun je niet ongedaan maken.
         </ThemedText>
         <ThemedText themeColor="textSecondary">
-          Een abonnement via de App Store of Google Play zeg je op in de instellingen van je telefoon; dat stopt niet vanzelf.
+          Een abonnement via {STORE_NAME} zeg je op in de instellingen van je telefoon; dat stopt niet vanzelf.
         </ThemedText>
         <Field label="Typ VERWIJDEREN om te bevestigen" value={confirm} onChangeText={setConfirm} autoCapitalize="characters" autoCorrect={false} />
       </Card>

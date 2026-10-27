@@ -19,6 +19,11 @@ import type { VersionCheck } from '@/api'
 const IOS_STORE_URL = 'https://apps.apple.com/nl/app/id6826899921'
 const ANDROID_STORE_URL = 'https://play.google.com/store/apps/details?id=nl.studiemaat.app'
 export const APP_STORE_URL = Platform.OS === 'android' ? ANDROID_STORE_URL : IOS_STORE_URL
+/**
+ * Naam van de winkel op dit toestel. In de app noemen we alleen de eigen winkel: Apple keurt een iOS-app af die
+ * Android of Google Play noemt (richtlijn 2.3.10), en Google andersom ook liever niet.
+ */
+export const STORE_NAME = Platform.OS === 'android' ? 'Google Play' : 'de App Store'
 
 export type VersionStatus = 'ok' | 'soft-update' | 'force-update' | 'unknown'
 
