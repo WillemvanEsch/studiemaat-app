@@ -41,7 +41,8 @@ export default function IkScreen() {
 
       <Card style={{ paddingVertical: Spacing.one, gap: 0 }}>
         <Row icon="slider.horizontal.3" label="Instellingen" sub="Niveau, vragen en weergave (licht of donker)" href="/(tabs)/ik/instellingen" />
-        <Row icon="person.badge.plus" label="Vriend uitnodigen" href="/(tabs)/ik/uitnodigen" />
+        {/* Uitnodigen alleen met toegang: anders nodig je gewoon een tweede mailadres van jezelf uit. */}
+        {me?.access.hasAccess ? <Row icon="person.badge.plus" label="Vriend uitnodigen" href="/(tabs)/ik/uitnodigen" /> : null}
         <Row icon="hand.raised" label="Privacy" href="/privacy" />
         <Row icon="questionmark.circle" label="Hulp en contact" href="/hulp" last />
       </Card>
