@@ -17,7 +17,7 @@ import { DisplayFont, Radius, Spacing } from '@/constants/theme'
 import { useAuth } from '@/contexts/auth-context'
 import { useTheme } from '@/hooks/use-theme'
 import { formatDate } from '@/lib/format'
-import { buy, loadOffers, manageSubscriptions, onPurchaseEvent, restore, type StoreOffer } from '@/lib/purchases'
+import { buy, checkOpenPurchases, loadOffers, manageSubscriptions, onPurchaseEvent, restore, type StoreOffer } from '@/lib/purchases'
 import { subscriptionView } from '@/lib/subscription'
 
 const PLAN_TEXT = { maand: 'Per maand', kwartaal: 'Per 3 maanden', jaar: 'Per jaar' } as const
@@ -88,6 +88,17 @@ export default function SubscriptionScreen() {
     staleTime: 10 * 60 * 1000,
     retry: false,
   })
+  // Een aankoop die de website nog niet kon verwerken: dan geen koopknoppen, maar opnieuw proberen.
+  const open = useQuery({
+    queryKey: ['open-purchases'],
+    queryFn: checkOpenPurchases,
+    enabled: canBuy,
+    staleTime: 0,
+    retry: false,
+  })
+  const waiting = canBuy && !!open.data?.open
+  const refetchOpen = open.refetch
+  useEffect(() => onPurchaseEvent((e) => void (e.kind === 'error' && refetchOpen())), [refetchOpen])
 
   if (!a || !view) return null
 
@@ -156,7 +167,18 @@ export default function SubscriptionScreen() {
       {view.buyNote && !canBuy ? <Notice>{view.buyNote}</Notice> : null}
       {message ? <Notice kind={message.kind}>{message.text}</Notice> : null}
 
-      {canBuy ? (
+      {waiting ? (
+        <Card>
+          <ThemedText style={styles.h2}>Je aankoop wordt verwerkt</ThemedText>
+          <ThemedText themeColor="textSecondary">
+            {open.data?.message ?? 'Je betaling is gelukt, maar we konden hem nog niet aan je account koppelen.'} Je hoeft niet
+            opnieuw te betalen.
+          </ThemedText>
+          <Button title="Opnieuw proberen" loading={open.isFetching} onPress={() => refetchOpen()} />
+        </Card>
+      ) : null}
+
+      {canBuy && !waiting ? (
         <>
           <Card style={{ borderColor: theme.primary }}>
             <ThemedText style={styles.h2}>

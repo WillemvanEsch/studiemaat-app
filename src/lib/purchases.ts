@@ -154,14 +154,16 @@ export async function buy(offer: StoreOffer, accountId: string) {
 }
 
 /** "Aankopen herstellen": alles wat de winkel nog als lopend kent opnieuw aan de website melden. */
-export async function restore(): Promise<{ restored: number; message?: string }> {
-  if (!(await (connected ?? initConnection()))) return { restored: 0, message: 'De winkel is nu niet bereikbaar.' }
+export async function restore(): Promise<{ found: number; restored: number; message?: string }> {
+  if (!(await (connected ?? initConnection()))) return { found: 0, restored: 0, message: 'De winkel is nu niet bereikbaar.' }
   const purchases = await getAvailablePurchases()
+  let found = 0
   let restored = 0
   let message: string | undefined
   for (const p of purchases) {
     const id = storeId(p)
     if (!id) continue
+    found++
     const r = await reportPurchase(STORE, id)
     if (r.ok) {
       restored++
@@ -169,7 +171,17 @@ export async function restore(): Promise<{ restored: number; message?: string }>
       await finishTransaction({ purchase: p, isConsumable: false }).catch(() => {})
     } else message = r.error.message
   }
-  return { restored, message }
+  return { found, restored, message }
+}
+
+/**
+ * Heeft de winkel een lopend abonnement dat de website (nog) niet aan dit account heeft gekoppeld? Bijvoorbeeld omdat
+ * de controle bij Google of Apple even mislukte. We melden het opnieuw; lukt dat niet, dan geeft dit de melding terug
+ * en laat het abonnementsscherm geen koopknoppen zien. Anders betaalt iemand per ongeluk twee keer.
+ */
+export async function checkOpenPurchases(): Promise<{ open: boolean; message?: string }> {
+  const r = await restore()
+  return r.found > r.restored ? { open: true, message: r.message } : { open: false }
 }
 
 /** Abonnementen beheren (opzeggen, wisselen) in de instellingen van de telefoon. */
