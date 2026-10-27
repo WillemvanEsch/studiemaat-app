@@ -43,7 +43,9 @@ export function subscriptionView(a: Access): SubscriptionView {
     a.storeSubscription ??
     (a.kind === 'actief' && a.store ? { store: a.store, plan: a.plan, label: a.label ?? '', until: a.until, autoRenew: !a.cancelled } : null)
   const renewing = !!storeSub?.autoRenew
-  const base = { storeSub, renewing, periods: periods.length > 1 ? periods : [] }
+  // Loopt er een abonnement uit de winkel, dan doet een gratis periode ernaast (proefweek, vriendenmaand) er niet meer toe.
+  const shown = storeSub ? periods.filter((p) => p.paid || p.store) : periods
+  const base = { storeSub, renewing, periods: shown.length > 1 ? shown : [] }
 
   if (a.kind === 'gratis')
     return { ...base, title: 'Altijd gratis', line: 'Je kunt Studiemaat voor altijd gratis gebruiken.', canBuy: false, buyNote: null, endingSoon: null }
@@ -61,7 +63,9 @@ export function subscriptionView(a: Access): SubscriptionView {
   const days = daysLeft(a.until)
   if (storeSub) {
     // Abonnement uit de app. Loopt er een websiteperiode langer door, dan noemen we die er ook bij.
-    const later = a.until > storeSub.until && !a.store ? ` Daarna loopt je ${a.label?.toLowerCase() ?? 'periode'} nog tot en met ${formatDate(a.until)}.` : ''
+    // Alleen een betaalde websiteperiode noemen; een proefweek die gelijk opliep is niet interessant meer.
+    const web = [...periods].reverse().find((p) => p.paid && !p.store && p.endsAt > storeSub.until)
+    const later = web ? ` Je ${web.label.toLowerCase()} van de website loopt nog tot en met ${formatDate(web.endsAt)}.` : ''
     return {
       ...base,
       title: storeSub.label || (a.label ?? 'Abonnement'),
