@@ -111,6 +111,9 @@ Wie via de link op de website een account maakt, krijgt de vriendenmaand (regels
 - De website stuurt `data.url` als webpad (`/les/12`, `/toets/34`); `routeFromUrl()` zet dat om naar een scherm.
 - Eerste melding: "Je les is klaar" na het verwerken van foto's.
 - Android heeft de FCM V1-sleutel in EAS nodig (`eas credentials` → Android → FCM V1). Simulator krijgt geen token.
+- Firebase-project `studiemaat-app` (zonder Analytics en Gemini). `google-services.json` staat in de repo (niet geheim) en
+  is gekoppeld via `android.googleServicesFile` in `app.json`. De FCM V1-sleutel (service account) is wél geheim: alleen in EAS.
+- `android.blockedPermissions` blokkeert `AD_ID`: in Play staat "geen advertentie-ID", dat moet zo blijven.
 
 ## Versie-check
 

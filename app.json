@@ -25,6 +25,7 @@
     },
     "android": {
       "package": "nl.studiemaat.app",
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "backgroundColor": "#18775B",
         "foregroundImage": "./assets/images/android-icon-foreground.png"
@@ -33,6 +34,9 @@
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO"
+      ],
+      "blockedPermissions": [
+        "com.google.android.gms.permission.AD_ID"
       ],
       "intentFilters": [
         {

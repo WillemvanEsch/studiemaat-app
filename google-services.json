@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "107204563542",
+    "project_id": "studiemaat-app",
+    "storage_bucket": "studiemaat-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:107204563542:android:59b02df0fe47932f48a1f7",
+        "android_client_info": {
+          "package_name": "nl.studiemaat.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAvvbQDx7I4s-Yx7IrafASO4p-ZMOqUHII"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
