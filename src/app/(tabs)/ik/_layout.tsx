@@ -2,6 +2,10 @@ import { Stack } from 'expo-router'
 
 import { useTheme } from '@/hooks/use-theme'
 
+// Opent een ander tabblad een subscherm van Ik (bv. "Abonnement kiezen" op Lessen), dan ligt Ik zelf eronder.
+// Zonder dit is het subscherm het enige scherm in de stapel: geen terugknop, en een tik op Ik blijft daar hangen.
+export const unstable_settings = { initialRouteName: 'index' }
+
 /** Het tabblad Ik heeft eigen subschermen (instellingen, abonnement, uitnodigen, account verwijderen). */
 export default function IkLayout() {
   const theme = useTheme()
