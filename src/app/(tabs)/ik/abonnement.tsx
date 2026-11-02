@@ -10,6 +10,7 @@ import { useFocusEffect } from 'expo-router'
 import { useCallback, useEffect, useState } from 'react'
 import { Linking, Platform, Pressable, StyleSheet, View } from 'react-native'
 
+import type { StoreName } from '@/api'
 import { Icon } from '@/components/icon'
 import { ThemedText } from '@/components/themed-text'
 import { Button, Card, Loading, Notice, Screen } from '@/components/ui'
@@ -47,6 +48,8 @@ function money(amount: number, currency: string) {
 const TERMS_URL =
   Platform.OS === 'ios' ? 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/' : 'https://play.google.com/about/play-terms/'
 const STORE_TEXT = Platform.OS === 'ios' ? 'je Apple ID' : 'je Google-account'
+// De winkel van deze telefoon; een abonnement uit de andere winkel kun je hier niet beheren.
+const THIS_STORE: StoreName = Platform.OS === 'ios' ? 'apple' : 'google'
 
 export default function SubscriptionScreen() {
   const { me, refreshMe } = useAuth()
@@ -159,8 +162,17 @@ export default function SubscriptionScreen() {
             ))}
           </View>
         ) : null}
-        {view.storeSub ? (
+        {view.storeSub && view.storeSub.store === THIS_STORE ? (
           <Button title="Abonnement beheren of opzeggen" kind="ghost" onPress={() => manageSubscriptions().catch(() => {})} />
+        ) : null}
+        {view.storeSub && view.storeSub.store !== THIS_STORE ? (
+          // Gekocht op het andere soort telefoon: de winkel van deze telefoon kent het abonnement niet, dus geen knop
+          // die naar een lege abonnementenlijst gaat.
+          <ThemedText type="small" themeColor="textSecondary">
+            {view.storeSub.store === 'apple'
+              ? 'Dit abonnement loopt via de App Store. Beheren of opzeggen doe je op een iPhone of iPad met de Apple ID waarmee je het kocht.'
+              : 'Dit abonnement loopt via Google Play. Beheren of opzeggen doe je op een Android-telefoon met het Google-account waarmee je het kocht.'}
+          </ThemedText>
         ) : null}
       </Card>
 
