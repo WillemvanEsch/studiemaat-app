@@ -167,7 +167,18 @@ export interface Lesson {
   topics: TopicStat[]
   freshCount: number
   makingQuestions: boolean
+  // Sinds 2 nov 2026 (optioneel: een oudere website stuurt ze niet mee).
+  /** Wanneer het maken van vragen begon (ISO, UTC), voor het balkje. Alleen gezet als makingQuestions. */
+  questionsStartedAt?: string | null
+  /** Geschatte duur van het maken van vragen in seconden. */
+  questionsEtaSeconds?: number | null
+  /** Worden er achteraf begrippen/overzichten gemaakt? */
+  makingExtras?: boolean
+  /** Wat er achteraf nog bij gemaakt kan worden (POST lessons/[id]/extras). */
+  extrasAvailable?: ExtraPart[]
 }
+
+export type ExtraPart = 'begrippen' | 'tabellen'
 
 export type TestMode = 'oefenen' | 'proeftoets' | 'herhaling'
 

@@ -1,7 +1,7 @@
 import { File } from 'expo-file-system'
 
 import { apiFetch } from './client'
-import type { Lesson, LessonListItem, ScanOptions } from './types'
+import type { ExtraPart, Lesson, LessonListItem, ScanOptions } from './types'
 
 export const fetchLessons = () => apiFetch<{ lessons: LessonListItem[] }>('/mobile/lessons')
 
@@ -16,6 +16,13 @@ export const retryLesson = (id: number) => apiFetch<{ ok: true }>(`/mobile/lesso
 
 export const makeQuestions = (id: number) =>
   apiFetch<{ added: number; message: string }>(`/mobile/lessons/${id}/questions`, { method: 'POST' })
+
+/** Begrippen (en flitskaarten) en/of overzichten achteraf laten maken. Wacht tot het klaar is (± halve minuut). */
+export const makeExtras = (id: number, parts: ExtraPart[]) =>
+  apiFetch<{ begrippen: number; tabellen: number; message: string }>(`/mobile/lessons/${id}/extras`, {
+    method: 'POST',
+    body: { parts },
+  })
 
 /** Eén foto uploaden. folder = uuid van deze nieuwe les, position = 1, 2, 3 ... */
 export function uploadPhoto(photo: { uri: string; mime: string }, folder: string, position: number) {

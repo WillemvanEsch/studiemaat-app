@@ -11,6 +11,7 @@ export {
   deleteLesson,
   fetchLesson,
   fetchLessons,
+  makeExtras,
   makeQuestions,
   renameLesson,
   retryLesson,

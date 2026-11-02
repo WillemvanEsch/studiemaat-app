@@ -9,8 +9,8 @@ import { Stack, router, useLocalSearchParams } from 'expo-router'
 import { useEffect, useState } from 'react'
 import { ActivityIndicator, Alert, Pressable, StyleSheet, View } from 'react-native'
 
-import { authHeaders, BASE_URL, createTest, deleteLesson, fetchLesson, makeQuestions, retryLesson } from '@/api'
-import type { Lesson, TopicStat } from '@/api'
+import { authHeaders, BASE_URL, createTest, deleteLesson, fetchLesson, makeExtras, makeQuestions, retryLesson } from '@/api'
+import type { ExtraPart, Lesson, TopicStat } from '@/api'
 import { Flashcards } from '@/components/flashcards'
 import { Icon } from '@/components/icon'
 import { RichText } from '@/components/rich-text'
@@ -34,7 +34,8 @@ export default function LessonScreen() {
       if (!r.ok) throw new Error(r.error.message)
       return r.data
     },
-    refetchInterval: (q) => (q.state.data?.status === 'processing' || q.state.data?.makingQuestions ? 5000 : false),
+    refetchInterval: (q) =>
+      q.state.data?.status === 'processing' || q.state.data?.makingQuestions || q.state.data?.makingExtras ? 5000 : false,
   })
 
   // Klaar gekomen terwijl je keek: ook de lijst bijwerken.
@@ -132,6 +133,7 @@ function LessonBody({ lesson }: { lesson: Lesson }) {
 
   const c = lesson.content
   const hasQuestions = c.vragen.length > 0
+  const offer = lesson.extrasAvailable ?? []
 
   return (
     <Screen edges={[]}>
@@ -177,6 +179,8 @@ function LessonBody({ lesson }: { lesson: Lesson }) {
           {more.data ? <Notice kind="ok">{more.data}</Notice> : null}
           {more.isError ? <Notice kind="error">{(more.error as Error).message}</Notice> : null}
         </Card>
+      ) : lesson.makingQuestions ? (
+        <QuestionsProgress startedAt={lesson.questionsStartedAt ?? null} etaSeconds={lesson.questionsEtaSeconds ?? 80} />
       ) : null}
 
       {lesson.topics.some((t) => t.verdict !== 'onbekend') ? <Topics topics={lesson.topics} /> : null}
@@ -193,6 +197,8 @@ function LessonBody({ lesson }: { lesson: Lesson }) {
       />
 
       {tab === 'uittreksel' ? <Summary lesson={lesson} /> : null}
+      {tab === 'uittreksel' && offer.includes('tabellen') ? <MakeExtras lesson={lesson} part="tabellen" /> : null}
+      {(tab === 'begrippen' || tab === 'kaarten') && offer.includes('begrippen') ? <MakeExtras lesson={lesson} part="begrippen" /> : null}
       {tab === 'begrippen' ? (
         c.begrippen.length ? (
           c.begrippen.map((b, i) => (
@@ -202,13 +208,69 @@ function LessonBody({ lesson }: { lesson: Lesson }) {
               {b.voorbeeld ? <ThemedText themeColor="textSecondary">Bijv. {b.voorbeeld}</ThemedText> : null}
             </Card>
           ))
-        ) : (
+        ) : offer.includes('begrippen') ? null : (
           <ThemedText themeColor="textSecondary">Deze les heeft geen begrippen.</ThemedText>
         )
       ) : null}
-      {tab === 'kaarten' ? <Flashcards cards={c.begrippen} /> : null}
+      {tab === 'kaarten' && !(offer.includes('begrippen') && !c.begrippen.length) ? <Flashcards cards={c.begrippen} /> : null}
       {tab === 'fotos' ? <Photos lesson={lesson} /> : null}
     </Screen>
+  )
+}
+
+/**
+ * Stap 2 van het maken van een les: het uittreksel staat er al, de toetsvragen worden nog gemaakt.
+ * Het balkje loopt vol op basis van de verstreken tijd; de les wordt elke 5 seconden opnieuw opgehaald.
+ */
+function QuestionsProgress({ startedAt, etaSeconds }: { startedAt: string | null; etaSeconds: number }) {
+  const theme = useTheme()
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(t)
+  }, [])
+  const start = startedAt ? new Date(startedAt).getTime() : now
+  const elapsed = Math.max(0, (now - start) / 1000)
+  const pct = Math.min(95, Math.round(5 + (elapsed / etaSeconds) * 90))
+  const left = Math.max(0, Math.round(etaSeconds - elapsed))
+  const minutes = Math.round(left / 60)
+  const text =
+    left <= 5 ? 'Bijna klaar…' : `Nog ongeveer ${left < 60 ? `${left} seconden` : minutes === 1 ? 'een minuut' : `${minutes} minuten`}.`
+  return (
+    <Card>
+      <ThemedText type="smallBold">Toetsvragen worden gemaakt</ThemedText>
+      <ThemedText type="small" themeColor="textSecondary">
+        {text} Lees intussen alvast het uittreksel.
+      </ThemedText>
+      <View style={{ height: 8, borderRadius: 4, backgroundColor: theme.muted, overflow: 'hidden' }}>
+        <View style={{ height: 8, width: `${pct}%`, backgroundColor: theme.primary, borderRadius: 4 }} />
+      </View>
+    </Card>
+  )
+}
+
+/** Knop om begrippen (en flitskaarten) of overzichten achteraf te laten maken, als ze bij het maken uit stonden. */
+function MakeExtras({ lesson, part }: { lesson: Lesson; part: ExtraPart }) {
+  const queryClient = useQueryClient()
+  const make = useMutation({
+    mutationFn: async () => {
+      const r = await makeExtras(lesson.id, [part])
+      if (!r.ok) throw new Error(r.error.message)
+      return r.data.message
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ['lesson', lesson.id] }),
+  })
+  const busy = make.isPending || !!lesson.makingExtras
+  const label = part === 'begrippen' ? 'begrippen en flitskaarten' : 'overzichten (rijtjes, jaartallen, vervoegingen)'
+  return (
+    <Card>
+      <ThemedText type="smallBold">{part === 'begrippen' ? 'Nog geen begrippen' : 'Ook overzichten?'}</ThemedText>
+      <ThemedText type="small" themeColor="textSecondary">
+        {busy ? 'Wordt gemaakt… dit duurt ongeveer een halve minuut.' : `Stond het uit bij het maken van deze les? Laat de ${label} er nu bij maken.`}
+      </ThemedText>
+      <Button title={busy ? 'Wordt gemaakt…' : 'Maak ze erbij'} icon="sparkles" kind="secondary" loading={busy} disabled={busy} onPress={() => make.mutate()} />
+      {make.isError ? <Notice kind="error">{(make.error as Error).message}</Notice> : null}
+    </Card>
   )
 }
 
