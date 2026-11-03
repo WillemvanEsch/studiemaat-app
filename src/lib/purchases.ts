@@ -23,6 +23,7 @@ import {
   purchaseErrorListener,
   purchaseUpdatedListener,
   requestPurchase,
+  showManageSubscriptionsIOS,
   type ProductSubscription,
   type Purchase,
 } from 'expo-iap'
@@ -184,6 +185,20 @@ export async function checkOpenPurchases(): Promise<{ open: boolean; message?: s
   return r.found > r.restored ? { open: true, message: r.message } : { open: false }
 }
 
-/** Abonnementen beheren (opzeggen, wisselen) in de instellingen van de telefoon. */
-export const manageSubscriptions = (productId?: string) =>
-  deepLinkToSubscriptions({ skuAndroid: productId ?? null, packageNameAndroid: ANDROID_PACKAGE })
+/**
+ * Abonnementen beheren (opzeggen, wisselen) in de instellingen van de telefoon.
+ * iOS: het beheerscherm van StoreKit in de app. De gewone link (apps.apple.com/account/subscriptions) toont alleen
+ * echte aankopen van de Apple ID van de telefoon, dus geen TestFlight-/sandbox-abonnementen. Lukt het scherm niet,
+ * dan alsnog die link.
+ */
+export async function manageSubscriptions(productId?: string): Promise<void> {
+  if (Platform.OS === 'ios') {
+    try {
+      await showManageSubscriptionsIOS()
+      return
+    } catch {
+      // val terug op de link hieronder
+    }
+  }
+  await deepLinkToSubscriptions({ skuAndroid: productId ?? null, packageNameAndroid: ANDROID_PACKAGE })
+}

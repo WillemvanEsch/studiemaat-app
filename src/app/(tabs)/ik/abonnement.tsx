@@ -163,7 +163,7 @@ export default function SubscriptionScreen() {
           </View>
         ) : null}
         {view.storeSub && view.storeSub.store === THIS_STORE ? (
-          <Button title="Abonnement beheren of opzeggen" kind="ghost" onPress={() => manageSubscriptions().catch(() => {})} />
+          <Button title="Abonnement beheren of opzeggen" kind="ghost" onPress={() => manageSubscriptions().catch(() => {}).finally(() => refreshMe().catch(() => {}))} />
         ) : null}
         {view.storeSub && view.storeSub.store !== THIS_STORE ? (
           // Gekocht op het andere soort telefoon: de winkel van deze telefoon kent het abonnement niet, dus geen knop
