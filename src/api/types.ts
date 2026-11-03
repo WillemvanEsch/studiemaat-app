@@ -176,6 +176,8 @@ export interface Lesson {
   makingExtras?: boolean
   /** Wat er achteraf nog bij gemaakt kan worden (POST lessons/[id]/extras). */
   extrasAvailable?: ExtraPart[]
+  /** Sinds 3 nov 2026: of opnieuw proberen zin heeft (niet bij "geen lesstof"). Oudere website: ontbreekt. */
+  canRetry?: boolean
 }
 
 export type ExtraPart = 'begrippen' | 'tabellen'

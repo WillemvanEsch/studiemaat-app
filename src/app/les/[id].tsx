@@ -127,7 +127,12 @@ function LessonBody({ lesson }: { lesson: Lesson }) {
     return (
       <Screen edges={[]}>
         <Notice kind="error">{lesson.error ?? 'Het maken van deze les is niet gelukt.'}</Notice>
-        <Button title="Opnieuw proberen" icon="arrow.clockwise" loading={retry.isPending} onPress={() => retry.mutate()} />
+        {lesson.canRetry === false ? (
+          // Geen lesstof op de foto's: met dezelfde foto's komt er weer hetzelfde uit, dus een nieuwe les maken.
+          <Button title="Nieuwe les maken" icon="camera.fill" onPress={() => router.replace('/(tabs)/nieuw')} />
+        ) : (
+          <Button title="Opnieuw proberen" icon="arrow.clockwise" loading={retry.isPending} onPress={() => retry.mutate()} />
+        )}
       </Screen>
     )
 
