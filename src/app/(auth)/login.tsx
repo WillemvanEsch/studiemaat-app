@@ -11,6 +11,7 @@ import { ThemedText } from '@/components/themed-text'
 import { Button, Field, Notice, Screen } from '@/components/ui'
 import { Spacing } from '@/constants/theme'
 import { useAuth } from '@/contexts/auth-context'
+import { looksLikeSchoolEmail } from '@/lib/school-mail'
 
 export default function LoginScreen() {
   const { requestCode, verifyCode } = useAuth()
@@ -68,6 +69,12 @@ export default function LoginScreen() {
               onSubmitEditing={() => sendCode()}
               placeholder="naam@voorbeeld.nl"
             />
+            {looksLikeSchoolEmail(email) ? (
+              <Notice kind="warn">
+                Dit lijkt een schooladres. Scholen houden mail van buiten vaak tegen, dan komt de code niet aan. Gebruik liever een
+                privé-adres, zoals Gmail of iCloud.
+              </Notice>
+            ) : null}
             {error ? <Notice kind="error">{error}</Notice> : null}
             <Button title="Stuur me een code" loading={busy} disabled={!email.includes('@')} onPress={() => sendCode()} />
             <ThemedText type="small" themeColor="textSecondary" style={styles.center}>
@@ -81,6 +88,13 @@ export default function LoginScreen() {
               We hebben een code van 6 cijfers gestuurd naar <ThemedText style={{ fontWeight: 700 }}>{email}</ThemedText>.
             </ThemedText>
             {note ? <Notice>{note}</Notice> : null}
+            {/* Schooladressen nemen de mail aan maar zetten hem vaak in quarantaine (zie lib/school-mail). */}
+            {looksLikeSchoolEmail(email) ? (
+              <Notice kind="warn">
+                Dit lijkt een schooladres. Scholen houden mail van buiten vaak tegen of zetten hem in quarantaine. Geen code binnen een
+                paar minuten? Kies dan hieronder &quot;Ander mailadres&quot; en gebruik een privé-adres.
+              </Notice>
+            ) : null}
             <Field
               label="Code"
               value={code}
@@ -99,7 +113,8 @@ export default function LoginScreen() {
             {error ? <Notice kind="error">{error}</Notice> : null}
             <Button title="Inloggen" loading={busy} disabled={code.length !== 6} onPress={() => checkCode()} />
             <ThemedText type="small" themeColor="textSecondary" style={styles.center}>
-              Geen mail gezien? Kijk ook in je spam. De code werkt 10 minuten.
+              Geen code ontvangen? Kijk in je spam of ongewenste mail, en bij Outlook ook bij Overige of in de quarantaine. Nog steeds
+              niets? Gebruik dan een privé-adres. De code werkt 10 minuten.
             </ThemedText>
             <Button title="Ander mailadres" kind="ghost" onPress={() => setStep('email')} />
           </View>
