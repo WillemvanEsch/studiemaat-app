@@ -1,0 +1,72 @@
+# Automatische OTA-update (route B uit CLAUDE.md): bij elke push naar main met alleen JS/TS-wijzigingen publiceert
+# GitHub `eas update` naar de production-branch, met het commitbericht als beschrijving. Alle telefoons met dezelfde
+# app-versie krijgen het bij de volgende start.
+#
+# Veiligheid: veranderde er iets natives (package.json, package-lock.json, app.json, eas.json, plugins), dan slaan we
+# de update over. Dat moet route C zijn (eas build + submit), anders kan een update een app laten crashen.
+# Handmatig starten kan ook (Actions → EAS update → Run workflow), bv. na een mislukte run.
+#
+# Nodig: repository-secret EXPO_TOKEN (expo.dev → Account settings → Access tokens). Zonder secret doet hij niets.
+name: EAS update
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'assets/**'
+  workflow_dispatch:
+
+concurrency:
+  group: eas-update-production
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Alleen JS/TS veranderd?
+        id: check
+        env:
+          BEFORE: ${{ github.event.before }}
+          HAS_TOKEN: ${{ secrets.EXPO_TOKEN != '' }}
+        run: |
+          if [ "$HAS_TOKEN" != "true" ]; then
+            echo "::warning::Geen EXPO_TOKEN ingesteld: geen update gepubliceerd."
+            echo "go=false" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          if [ "${{ github.event_name }}" = "push" ] && [ -n "$BEFORE" ] && [ "$BEFORE" != "0000000000000000000000000000000000000000" ]; then
+            native=$(git diff --name-only "$BEFORE" "$GITHUB_SHA" -- package.json package-lock.json app.json eas.json plugins google-services.json || true)
+            if [ -n "$native" ]; then
+              echo "::warning::Native wijziging ($native): geen OTA-update. Dit vraagt een nieuwe build (eas build + submit)."
+              echo "go=false" >> "$GITHUB_OUTPUT"; exit 0
+            fi
+          fi
+          echo "go=true" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-node@v4
+        if: steps.check.outputs.go == 'true'
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: expo/expo-github-action@v8
+        if: steps.check.outputs.go == 'true'
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Controleren
+        if: steps.check.outputs.go == 'true'
+        run: |
+          npm ci
+          npm run typecheck
+          npm run lint
+
+      - name: Update publiceren
+        if: steps.check.outputs.go == 'true'
+        run: eas update --branch production --environment production --auto --non-interactive

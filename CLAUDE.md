@@ -145,8 +145,11 @@ aanbevolen = balk bovenin. `APP_STORE_URL` in `src/lib/version.ts` moet het echt
 
 Zelfde drie routes als bij bieden.nl:
 - **A. Alleen de website** (studypro) → push naar main → Vercel. Kan alles zolang het API-contract heel blijft.
-- **B. Alleen JS/TS in `src/`** → `eas update --branch production --message "..."`. Alle telefoons met dezelfde
-  `version` krijgen het bij de volgende start. Eerst testen via `--branch preview`.
+- **B. Alleen JS/TS in `src/`** → gaat sinds 6 nov 2026 automatisch: een push naar main die alleen `src/`/`assets/` raakt,
+  start de GitHub Action `.github/workflows/eas-update.yml` (typecheck + lint, dan `eas update --branch production --auto`,
+  commitbericht = beschrijving). Raakt de push ook `package.json`, `app.json`, `eas.json` e.d., dan slaat hij over (route C).
+  Nodig: secret `EXPO_TOKEN` in GitHub. Met de hand: eerst `git pull`, dan `eas update --branch production --auto`.
+  Alle telefoons met dezelfde `version` krijgen het bij de volgende start.
 - **C. Native** (nieuw native package, `app.json` native delen, versie ophogen) → `eas build --profile production`
   + `eas submit` + review bij Apple/Google.
 Bij twijfel: C.
