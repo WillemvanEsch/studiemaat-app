@@ -11,6 +11,8 @@ export interface UpdateMeInput {
   year?: number | null
   difficulty?: Difficulty
   scan?: ScanOptions
+  /** Herinneringen om 19:00 (hooguit één per week) aan of uit. "Je les is klaar" gaat altijd. */
+  pushReminders?: boolean
 }
 
 export const updateMe = (input: UpdateMeInput) => apiFetch<Me>('/mobile/me', { method: 'PATCH', body: input })

@@ -93,6 +93,8 @@ function routeFromUrl(url: string | undefined): string {
   if (lesson) return `/les/${lesson[1]}`
   const test = url.match(/^\/toets\/(\d+)/)
   if (test) return `/toets/${test[1]}`
+  // Herinnering "Maak je eerste les": meteen naar de camera/foto's.
+  if (/^\/nieuw\b/.test(url)) return '/(tabs)/nieuw'
   return '/(tabs)'
 }
 

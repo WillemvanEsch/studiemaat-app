@@ -5,7 +5,7 @@
 
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
-import { Pressable, StyleSheet, View } from 'react-native'
+import { Pressable, StyleSheet, Switch, View } from 'react-native'
 
 import { fetchOptions, updateMe } from '@/api'
 import type { Difficulty, QuestionAmount, ScanPart } from '@/api'
@@ -157,7 +157,49 @@ export default function SettingsScreen() {
       </Card>
 
       <MarkColorCard />
+
+      <RemindersCard />
     </Screen>
+  )
+}
+
+/**
+ * Herinneringen per pushbericht (rond 19:00, hooguit één per week, niet als je net geoefend hebt). Gaat meteen in.
+ * Staan meldingen voor Studiemaat in de telefoon zelf uit, dan komt er natuurlijk niets; dat regelt de telefoon.
+ */
+function RemindersCard() {
+  const { me, setMe } = useAuth()
+  const theme = useTheme()
+  const [on, setOn] = useState(me?.notifications?.reminders ?? true)
+  const save = useMutation({
+    mutationFn: async (value: boolean) => {
+      const r = await updateMe({ pushReminders: value })
+      if (!r.ok) throw new Error(r.error.message)
+      await setMe(r.data)
+    },
+    onError: () => setOn(me?.notifications?.reminders ?? true),
+  })
+  return (
+    <Card>
+      <View style={styles.check}>
+        <View style={{ flex: 1 }}>
+          <ThemedText type="smallBold">Herinneringen</ThemedText>
+          <ThemedText type="small" themeColor="textSecondary">
+            Af en toe &apos;s avonds een seintje om te oefenen, hooguit één keer per week. Oefen je al, dan krijg je niets.
+          </ThemedText>
+        </View>
+        <Switch
+          value={on}
+          onValueChange={(v) => {
+            setOn(v)
+            save.mutate(v)
+          }}
+          trackColor={{ true: theme.primary }}
+          accessibilityLabel="Herinneringen"
+        />
+      </View>
+      {save.isError ? <Notice kind="error">{(save.error as Error).message}</Notice> : null}
+    </Card>
   )
 }
 

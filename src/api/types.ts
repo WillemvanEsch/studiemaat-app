@@ -80,6 +80,8 @@ export interface Me {
   access: Access
   profile: Profile
   scan: ScanOptions
+  /** Sinds 6 nov 2026; oudere website-versies sturen het niet mee (dan geldt: aan). */
+  notifications?: { reminders: boolean }
 }
 
 export interface Session extends Me {
