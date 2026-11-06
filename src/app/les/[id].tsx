@@ -19,6 +19,7 @@ import { ThemedText } from '@/components/themed-text'
 import { Button, Card, Chips, Loading, Notice, Screen } from '@/components/ui'
 import { DisplayFont, Radius, Spacing } from '@/constants/theme'
 import { useTheme } from '@/hooks/use-theme'
+import { etaText, remainingText } from '@/lib/eta'
 
 type Tab = 'uittreksel' | 'begrippen' | 'kaarten' | 'fotos'
 
@@ -116,9 +117,13 @@ function LessonBody({ lesson }: { lesson: Lesson }) {
         <Card style={{ alignItems: 'center', paddingVertical: Spacing.five }}>
           <ActivityIndicator color={theme.primary} size="large" />
           <ThemedText style={styles.h2}>Je les wordt gemaakt</ThemedText>
-          <ThemedText themeColor="textSecondary" style={{ textAlign: 'center' }}>
-            Dit duurt meestal 1 tot 3 minuten. Je mag de app gerust sluiten: je krijgt een berichtje als hij klaar is.
-          </ThemedText>
+          {lesson.processingEtaSeconds ? (
+            <ProcessingProgress pages={lesson.pages.length} startedAt={lesson.processingStartedAt ?? null} etaSeconds={lesson.processingEtaSeconds} />
+          ) : (
+            <ThemedText themeColor="textSecondary" style={{ textAlign: 'center' }}>
+              Dit duurt meestal 1 tot 3 minuten. Je mag de app gerust sluiten: je krijgt een berichtje als hij klaar is.
+            </ThemedText>
+          )}
         </Card>
       </Screen>
     )
@@ -220,6 +225,36 @@ function LessonBody({ lesson }: { lesson: Lesson }) {
       {tab === 'kaarten' && !(offer.includes('begrippen') && !c.begrippen.length) ? <Flashcards cards={c.begrippen} /> : null}
       {tab === 'fotos' ? <Photos lesson={lesson} /> : null}
     </Screen>
+  )
+}
+
+/**
+ * Stap 1 van het maken van een les: de AI leest de foto's. Het balkje loopt op de verwachte duur die de website
+ * uitrekent uit echte lessen met evenveel foto's, en op de echte starttijd (dus niet opnieuw na terugkomen).
+ */
+function ProcessingProgress({ pages, startedAt, etaSeconds }: { pages: number; startedAt: string | null; etaSeconds: number }) {
+  const theme = useTheme()
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(t)
+  }, [])
+  const start = startedAt ? new Date(startedAt).getTime() : now
+  const elapsed = Math.max(0, (now - start) / 1000)
+  const pct = Math.min(95, Math.round(5 + (elapsed / etaSeconds) * 90))
+  const text =
+    elapsed < etaSeconds * 1.3
+      ? `Met ${pages === 1 ? '1 foto' : `${pages} foto's`} duurt dit ${etaText(etaSeconds)}. ${remainingText(etaSeconds - elapsed)}`
+      : 'Het duurt wat langer dan normaal, maar hij is nog bezig.'
+  return (
+    <View style={{ alignSelf: 'stretch', gap: Spacing.two }}>
+      <View style={{ height: 8, borderRadius: 4, backgroundColor: theme.muted, overflow: 'hidden' }}>
+        <View style={{ height: 8, width: `${pct}%`, backgroundColor: theme.primary, borderRadius: 4 }} />
+      </View>
+      <ThemedText themeColor="textSecondary" style={{ textAlign: 'center' }}>
+        {text} Je mag de app gerust sluiten: je krijgt een berichtje als hij klaar is.
+      </ThemedText>
+    </View>
   )
 }
 

@@ -96,6 +96,10 @@ export interface Options {
   questionAmounts: { id: QuestionAmount; label: string; count: string }[]
   plans: { id: string; label: string; months: number; cents: number; price: string; perMonth: string }[]
   trialDays: number
+  /** Sinds 6 nov 2026 (oudere website: ontbreekt): verwachte duur van een nieuwe les = base + perPage × foto's, in seconden. */
+  lessonEta?: { base: number; perPage: number }
+  /** Vanaf hoeveel foto's de tip "maak liever een les per hoofdstuk" komt. */
+  splitTipFrom?: number
 }
 
 export type LessonStatus = 'processing' | 'ready' | 'error'
@@ -180,6 +184,9 @@ export interface Lesson {
   extrasAvailable?: ExtraPart[]
   /** Sinds 3 nov 2026: of opnieuw proberen zin heeft (niet bij "geen lesstof"). Oudere website: ontbreekt. */
   canRetry?: boolean
+  /** Sinds 6 nov 2026: bij status processing wanneer het maken begon (ISO, UTC) en de verwachte duur in seconden. */
+  processingStartedAt?: string | null
+  processingEtaSeconds?: number | null
 }
 
 export type ExtraPart = 'begrippen' | 'tabellen'

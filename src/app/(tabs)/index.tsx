@@ -242,7 +242,7 @@ function LessonCard({ lesson }: { lesson: LessonListItem }) {
           <View style={styles.row}>
             <ActivityIndicator size="small" color={theme.primary} />
             <ThemedText type="small" themeColor="textSecondary">
-              Wordt gemaakt… dit duurt 1 tot 3 minuten
+              Wordt gemaakt… dit duurt een paar minuten
             </ThemedText>
           </View>
         ) : lesson.status === 'error' ? (

@@ -3,13 +3,13 @@
  * De eerste keer vragen we toestemming om foto's door een AI te laten verwerken (verplicht van Apple).
  */
 
-import { useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Image } from 'expo-image'
 import { router } from 'expo-router'
 import { useEffect, useState } from 'react'
 import { Alert, Linking, Pressable, StyleSheet, View } from 'react-native'
 
-import { createLesson } from '@/api'
+import { createLesson, fetchOptions } from '@/api'
 import { Icon } from '@/components/icon'
 import { ThemedText } from '@/components/themed-text'
 import { Button, Card, Chips, Field, Notice, Screen, Title } from '@/components/ui'
@@ -17,6 +17,7 @@ import { Radius, Spacing } from '@/constants/theme'
 import { useAuth } from '@/contexts/auth-context'
 import { useTheme } from '@/hooks/use-theme'
 import { MAX_PAGES, pickPhotos, takePhoto, uploadAll, type Photo } from '@/lib/photos'
+import { DEFAULT_SPLIT_TIP_FROM, etaText, lessonEtaSeconds } from '@/lib/eta'
 import { hasAiConsent, saveAiConsent } from '@/lib/storage'
 
 /** Zelfde vakken als op de website (studypro/src/lib/format.ts SUBJECTS). */
@@ -48,6 +49,16 @@ export default function NewLessonScreen() {
   const [instructions, setInstructions] = useState('')
   const [progress, setProgress] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  // Zelfde keuzelijsten als Instellingen; hier voor de verwachte duur en de tip bij veel foto's.
+  const options = useQuery({
+    queryKey: ['options'],
+    queryFn: async () => {
+      const r = await fetchOptions()
+      if (!r.ok) throw new Error(r.error.message)
+      return r.data
+    },
+    staleTime: Infinity,
+  })
 
   useEffect(() => {
     hasAiConsent().then(setConsent)
@@ -156,6 +167,18 @@ export default function NewLessonScreen() {
           Tip: leg het boek plat neer, zorg voor genoeg licht en zet de hele bladzijde in beeld. Maximaal {MAX_PAGES} foto&apos;s per les.
         </ThemedText>
       )}
+
+      {photos.length ? (
+        <ThemedText type="small" themeColor="textSecondary">
+          Met {photos.length === 1 ? '1 foto' : `${photos.length} foto's`} duurt het maken {etaText(lessonEtaSeconds(options.data, photos.length))}.
+        </ThemedText>
+      ) : null}
+      {/* Geen harde grens (die blijft 20), wel een duwtje: kleinere lessen zijn sneller klaar en overzichtelijker. */}
+      {photos.length >= (options.data?.splitTipFrom ?? DEFAULT_SPLIT_TIP_FROM) ? (
+        <Notice kind="warn">
+          Veel bladzijden? Maak liever een les per hoofdstuk of paragraaf. Dan is je eerste les sneller klaar en kun je per deel oefenen.
+        </Notice>
+      ) : null}
 
       {photos.length ? (
         <>
