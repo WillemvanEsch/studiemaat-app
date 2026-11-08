@@ -3,6 +3,7 @@
  * Wie op studiemaat.nl betaalde, ziet hier gewoon zijn periode.
  * Let op (Apple 3.1.1 / 3.1.3): de app verwijst NIET naar de website om te betalen.
  * Apple eist bij abonnementen: duur, prijs, dat het automatisch verlengt, en links naar de voorwaarden (EULA) en privacy.
+ * Losse lessen (sinds 8 nov 2026): alleen voor wie geen abonnement en geen gratis periode heeft (access verlopen).
  */
 
 import { useQuery } from '@tanstack/react-query'
@@ -18,7 +19,18 @@ import { DisplayFont, Radius, Spacing } from '@/constants/theme'
 import { useAuth } from '@/contexts/auth-context'
 import { useTheme } from '@/hooks/use-theme'
 import { formatDate } from '@/lib/format'
-import { buy, checkOpenPurchases, loadOffers, manageSubscriptions, onPurchaseEvent, restore, type StoreOffer } from '@/lib/purchases'
+import {
+  buy,
+  buyLesson,
+  checkOpenPurchases,
+  loadLessonOffers,
+  loadOffers,
+  manageSubscriptions,
+  onPurchaseEvent,
+  restore,
+  type LessonOffer,
+  type StoreOffer,
+} from '@/lib/purchases'
 import { subscriptionView } from '@/lib/subscription'
 
 const PLAN_TEXT = { maand: 'Per maand', kwartaal: 'Per 3 maanden', jaar: 'Per jaar' } as const
@@ -70,7 +82,13 @@ export default function SubscriptionScreen() {
       onPurchaseEvent((e) => {
         if (e.kind === 'busy') return setBusy(true)
         setBusy(false)
-        if (e.kind === 'done') setMessage({ kind: 'ok', text: 'Gelukt! Je abonnement loopt. Veel succes met leren.' })
+        if (e.kind === 'done')
+          setMessage({
+            kind: 'ok',
+            text: e.lessons
+              ? `Gelukt! Je hebt ${e.lessons === 1 ? 'een les' : `${e.lessons} lessen`} erbij. Maak je les via het tabblad Nieuw.`
+              : 'Gelukt! Je abonnement loopt. Veel succes met leren.',
+          })
         if (e.kind === 'error') setMessage({ kind: 'error', text: e.message })
       }),
     [],
@@ -99,6 +117,19 @@ export default function SubscriptionScreen() {
     staleTime: 0,
     retry: false,
   })
+  // Losse lessen: alleen zonder abonnement en zonder gratis periode.
+  const lessonsForSale = a?.kind === 'verlopen'
+  const lessonOffers = useQuery({
+    queryKey: ['lesson-offers'],
+    queryFn: async () => {
+      const r = await loadLessonOffers()
+      if ('error' in r) throw new Error(r.error)
+      return r
+    },
+    enabled: lessonsForSale,
+    staleTime: 10 * 60 * 1000,
+    retry: false,
+  })
   const waiting = canBuy && !!open.data?.open
   const refetchOpen = open.refetch
   useEffect(() => onPurchaseEvent((e) => void (e.kind === 'error' && refetchOpen())), [refetchOpen])
@@ -120,6 +151,19 @@ export default function SubscriptionScreen() {
       setMessage({ kind: 'error', text: 'Het betaalscherm kon niet worden geopend. Probeer het nog eens.' })
     }
   }
+
+  const startLesson = async (offer: LessonOffer) => {
+    if (!lessonOffers.data) return
+    setMessage(null)
+    setBusy(true)
+    try {
+      await buyLesson(offer, lessonOffers.data.info.accountId)
+    } catch {
+      setBusy(false)
+      setMessage({ kind: 'error', text: 'Het betaalscherm kon niet worden geopend. Probeer het nog eens.' })
+    }
+  }
+  const single = lessonOffers.data?.offers.find((o) => o.lessons === 1)
 
   const doRestore = async () => {
     setMessage(null)
@@ -278,6 +322,62 @@ export default function SubscriptionScreen() {
             </ThemedText>
           </View>
         </>
+      ) : null}
+
+      {lessonsForSale && !waiting ? (
+        <Card>
+          <ThemedText style={styles.h2}>Eén toets op komst?</ThemedText>
+          <ThemedText themeColor="textSecondary">
+            Koop een losse les, zonder abonnement. Tot 20 bladzijdes lesstof met uittreksel, begrippen, flitskaarten, overhoren en
+            proeftoetsen (120 toetsvragen). De les blijft altijd van jou.
+          </ThemedText>
+          {a.lessonCredits ? (
+            <Notice kind="ok">Je hebt nog {a.lessonCredits === 1 ? '1 les' : `${a.lessonCredits} lessen`} tegoed. Maak je les via het tabblad Nieuw.</Notice>
+          ) : null}
+          {lessonOffers.isLoading ? <Loading /> : null}
+          {lessonOffers.isError ? <Notice>{(lessonOffers.error as Error).message}</Notice> : null}
+          {lessonOffers.data?.offers.map((o) => {
+            const bundle = o.lessons > 1
+            const per = bundle && o.product.price ? money(o.product.price / o.lessons, o.product.currency) : null
+            const save = bundle && single?.product.price && o.product.price ? Math.round((1 - o.product.price / (single.product.price * o.lessons)) * 100) : 0
+            return (
+              <Pressable
+                key={o.product.id}
+                accessibilityRole="button"
+                disabled={busy}
+                onPress={() => startLesson(o)}
+                style={({ pressed }) => [
+                  styles.offer,
+                  { borderColor: bundle ? theme.primary : theme.border, backgroundColor: bundle ? theme.accent : theme.backgroundElement, borderWidth: bundle ? 2 : 1 },
+                  pressed && { opacity: 0.7 },
+                ]}>
+                {bundle ? (
+                  <View style={[styles.badge, { backgroundColor: theme.primary }]}>
+                    <ThemedText type="smallBold" style={{ color: theme.primaryForeground }}>
+                      Voor je toetsweek
+                    </ThemedText>
+                  </View>
+                ) : null}
+                <Icon name={bundle ? 'sparkles' : 'book.fill'} size={22} tintColor={theme.primary} />
+                <View style={{ flex: 1, gap: 2 }}>
+                  <ThemedText style={{ fontWeight: 700, fontSize: 17 }}>{bundle ? `${o.lessons} losse lessen` : '1 losse les'}</ThemedText>
+                  <ThemedText type="small" themeColor="textSecondary">
+                    {bundle ? `${per} per les` : 'Voor één toets'}
+                  </ThemedText>
+                  {save >= 5 ? (
+                    <ThemedText type="smallBold" style={{ color: theme.success }}>
+                      Bespaar {save}%
+                    </ThemedText>
+                  ) : null}
+                </View>
+                <ThemedText style={{ fontWeight: 800, fontSize: 18 }}>{o.product.displayPrice}</ThemedText>
+              </Pressable>
+            )
+          })}
+          <ThemedText type="small" themeColor="textSecondary">
+            Eenmalige aankoop via {STORE_TEXT}, er wordt niets verlengd. Ga je vaker oefenen? Dan is een abonnement voordeliger.
+          </ThemedText>
+        </Card>
       ) : null}
 
       {a.kind !== 'gratis' ? <Button title="Aankopen herstellen" kind="ghost" disabled={busy} onPress={doRestore} /> : null}

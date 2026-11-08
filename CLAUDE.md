@@ -92,6 +92,12 @@ verstuurd. Geef dat account in Beheer "Altijd gratis".
   `obfuscatedAccountId`). Na de aankoop melden we hem aan de website (`/mobile/store/purchase`), die hem bij
   Apple/Google controleert; pas daarna `finishTransaction`. Bij een storing niet afronden: de winkel biedt hem bij de
   volgende start opnieuw aan (luisteren start in `auth-context` zodra je bent ingelogd).
+- **Losse lessen (sinds 8 nov 2026):** eenmalige aankopen ("consumable") `studiemaat_les` (€ 2,99) en `studiemaat_5_lessen`
+  (€ 12,99), alleen voor wie geen abonnement en geen gratis periode heeft (`access.kind === 'verlopen'`). Melden met
+  `productId` erbij, afronden met `isConsumable: true`. Tegoed staat in `me.access.lessonCredits`; met tegoed mag `nieuw`
+  een les maken (kost 1). Met tegoed gemaakte lessen hebben `unlocked: true` en blijven bruikbaar. Max 20 foto's, 120 vragen.
+- Prijzen (sinds 8 nov 2026, overal gelijk aan de website): maand € 11,99, 3 maanden € 29,99, jaar € 69,99. De app toont
+  altijd de prijs van de winkel zelf; bestaande abonnees houden in de winkel hun oude prijs.
 - `ik/abonnement`: status, abonnementen kopen (alleen als je geen doorlopend winkelabonnement hebt), "Aankopen
   herstellen" (verplicht bij Apple), "Abonnement beheren" (instellingen van de telefoon), en de verplichte tekst over
   automatisch verlengen met links naar gebruiksvoorwaarden en privacy.

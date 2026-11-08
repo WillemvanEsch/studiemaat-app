@@ -101,8 +101,12 @@ export default function LessonsScreen() {
       {expired ? (
         <Notice kind="warn">
           <ThemedText type="smallBold">Je gratis periode of abonnement is afgelopen</ThemedText>
-          <ThemedText type="small">Je lessen blijven bewaard. Kies een abonnement om verder te leren.</ThemedText>
-          <Button title="Bekijk abonnementen" kind="secondary" onPress={() => router.push('/(tabs)/ik/abonnement')} />
+          <ThemedText type="small">
+            {me.access.lessonCredits
+              ? `Je lessen blijven bewaard. Je hebt nog ${me.access.lessonCredits === 1 ? '1 les' : `${me.access.lessonCredits} lessen`} tegoed.`
+              : 'Je lessen blijven bewaard. Kies een abonnement of koop een losse les om verder te leren.'}
+          </ThemedText>
+          <Button title="Abonnement of losse les" kind="secondary" onPress={() => router.push('/(tabs)/ik/abonnement')} />
         </Notice>
       ) : null}
 

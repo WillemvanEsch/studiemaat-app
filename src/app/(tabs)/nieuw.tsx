@@ -40,7 +40,7 @@ const SUBJECTS = [
 
 export default function NewLessonScreen() {
   const theme = useTheme()
-  const { me } = useAuth()
+  const { me, refreshMe } = useAuth()
   const queryClient = useQueryClient()
   const [consent, setConsent] = useState<boolean | null>(null)
   const [photos, setPhotos] = useState<Photo[]>([])
@@ -88,7 +88,10 @@ export default function NewLessonScreen() {
     )
   }
 
-  const expired = me && !me.access.hasAccess
+  // Zonder abonnement of gratis periode kan het nog met tegoed voor losse lessen (één les per nieuwe les).
+  const credits = me?.access.lessonCredits ?? 0
+  const expired = me && !me.access.hasAccess && credits <= 0
+  const onCredit = me && !me.access.hasAccess && credits > 0
   const busy = progress !== null
   const room = MAX_PAGES - photos.length
 
@@ -126,6 +129,7 @@ export default function NewLessonScreen() {
     setInstructions('')
     setSubject(null)
     queryClient.invalidateQueries({ queryKey: ['lessons'] })
+    if (onCredit) refreshMe().catch(() => {})
     router.push(`/les/${r.data.id}`)
   }
 
@@ -135,8 +139,15 @@ export default function NewLessonScreen() {
 
       {expired ? (
         <Notice kind="warn">
-          <ThemedText type="small">Je gratis periode of abonnement is afgelopen. Kies een abonnement om nieuwe lessen te maken.</ThemedText>
-          <Button title="Bekijk abonnementen" kind="secondary" onPress={() => router.push('/(tabs)/ik/abonnement')} />
+          <ThemedText type="small">
+            Je gratis periode of abonnement is afgelopen. Kies een abonnement, of koop een losse les voor die ene toets.
+          </ThemedText>
+          <Button title="Abonnement of losse les" kind="secondary" onPress={() => router.push('/(tabs)/ik/abonnement')} />
+        </Notice>
+      ) : null}
+      {onCredit ? (
+        <Notice kind="ok">
+          Je hebt nog {credits === 1 ? '1 les' : `${credits} lessen`} tegoed. Deze les gaat van je tegoed af (maximaal 20 foto{"'"}s).
         </Notice>
       ) : null}
 

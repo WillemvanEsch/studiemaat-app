@@ -38,7 +38,14 @@ export interface StoreSubscription {
 }
 
 // periods en storeSubscription zijn later toegevoegd (okt 2026); oudere versies van de website sturen ze niet.
-type AccessExtra = { hasAccess: boolean; label: string | null; periods?: Period[]; storeSubscription?: StoreSubscription | null }
+type AccessExtra = {
+  hasAccess: boolean
+  label: string | null
+  periods?: Period[]
+  storeSubscription?: StoreSubscription | null
+  /** Tegoed voor losse lessen (sinds 8 nov 2026). Zonder abonnement mag je hiermee nieuwe lessen maken. */
+  lessonCredits?: number
+}
 
 export type Access =
   | ({ kind: 'gratis'; store?: null } & AccessExtra)
@@ -51,6 +58,8 @@ export type StoreName = 'apple' | 'google'
 export interface StoreInfo {
   products: { productId: string; plan: 'maand' | 'kwartaal' | 'jaar' }[]
   /** Vaste UUID van dit account; gaat mee als appAccountToken (iOS) / obfuscatedAccountId (Android). */
+  /** Losse lessen als eenmalige aankoop (sinds 8 nov 2026). */
+  lessonProducts?: { productId: string; lessons: number }[]
   accountId: string
   available: { apple: boolean; google: boolean }
 }
@@ -106,6 +115,8 @@ export type LessonStatus = 'processing' | 'ready' | 'error'
 
 export interface LessonListItem {
   id: number
+  /** Met tegoed gekocht: blijft bruikbaar zonder abonnement (sinds 8 nov 2026). */
+  unlocked?: boolean
   title: string
   subject: string
   status: LessonStatus
@@ -162,6 +173,8 @@ export interface TopicStat {
 
 export interface Lesson {
   id: number
+  /** Met tegoed gekocht: blijft bruikbaar zonder abonnement (sinds 8 nov 2026). */
+  unlocked?: boolean
   title: string
   subject: string
   status: LessonStatus

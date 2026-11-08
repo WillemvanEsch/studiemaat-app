@@ -9,6 +9,9 @@
  * 4. Pas daarna finishTransaction (Google: bevestigen binnen 3 dagen, anders terugbetaald; Apple: anders komt hij
  *    bij elke start terug). Lukt stap 3 niet door een storing, dan ronden we niet af en proberen we het later opnieuw.
  *
+ * Losse lessen (sinds 8 nov 2026): eenmalige aankopen ("consumable") studiemaat_les en studiemaat_5_lessen. Zelfde
+ * volgorde; de website schrijft tegoed bij en wij ronden af met isConsumable: true, zodat je ze opnieuw kunt kopen.
+ *
  * Belangrijk (Apple 3.1.1/3.1.3): nergens in de app verwijzen naar betalen op de website.
  */
 
@@ -24,6 +27,7 @@ import {
   purchaseUpdatedListener,
   requestPurchase,
   showManageSubscriptionsIOS,
+  type Product,
   type ProductSubscription,
   type Purchase,
 } from 'expo-iap'
@@ -38,7 +42,7 @@ const ANDROID_PACKAGE = 'nl.studiemaat.app'
 
 export type PurchaseEvent =
   | { kind: 'busy' }
-  | { kind: 'done'; me: Me | null }
+  | { kind: 'done'; me: Me | null; lessons?: number }
   | { kind: 'error'; message: string }
   | { kind: 'cancelled' }
 
@@ -58,21 +62,26 @@ let onMe: ((me: Me) => void) | null = null
 
 const storeId = (p: Purchase) => (STORE === 'apple' ? p.id : p.purchaseToken) ?? null
 
+/** Codes van de losse lessen in de winkels, met het aantal lessen (staan ook in /mobile/store). */
+export const LESSON_PRODUCTS: Record<string, number> = { studiemaat_les: 1, studiemaat_5_lessen: 5 }
+const isLesson = (p: Purchase) => p.productId in LESSON_PRODUCTS
+
 /** Eén aankoop verwerken: melden bij de website en, als dat definitief is, afronden bij de winkel. */
 async function handle(purchase: Purchase) {
   if (purchase.purchaseState !== 'purchased') return // bv. Google "in afwachting" (contant betalen in een winkel)
   const id = storeId(purchase)
   if (!id) return
   emit({ kind: 'busy' })
-  const r = await reportPurchase(STORE, id)
+  const consumable = isLesson(purchase)
+  const r = await reportPurchase(STORE, id, purchase.productId)
   if (r.ok) {
-    await finishTransaction({ purchase, isConsumable: false }).catch((err) => Sentry.captureException(err))
+    await finishTransaction({ purchase, isConsumable: consumable }).catch((err) => Sentry.captureException(err))
     if (r.data.me) onMe?.(r.data.me)
-    emit({ kind: 'done', me: r.data.me })
+    emit({ kind: 'done', me: r.data.me, lessons: consumable ? LESSON_PRODUCTS[purchase.productId] : undefined })
     return
   }
   // 409: de website kent de aankoop maar kan hem niet koppelen (bv. ander account). Afronden, anders blijft hij terugkomen.
-  if (r.status === 409) await finishTransaction({ purchase, isConsumable: false }).catch(() => {})
+  if (r.status === 409) await finishTransaction({ purchase, isConsumable: consumable }).catch(() => {})
   emit({ kind: 'error', message: r.error.message })
 }
 
@@ -132,6 +141,34 @@ export async function loadOffers(): Promise<{ info: StoreInfo; offers: StoreOffe
   return { info: info.data, offers }
 }
 
+export interface LessonOffer {
+  lessons: number
+  product: Product
+}
+
+/** Losse lessen met de prijs zoals de winkel die toont. Leeg als de winkel ze (nog) niet kent. */
+export async function loadLessonOffers(): Promise<{ info: StoreInfo; offers: LessonOffer[] } | { error: string }> {
+  const info = await fetchStoreInfo()
+  if (!info.ok) return { error: info.error.message }
+  if (!info.data.available[STORE]) return { error: 'Losse lessen kopen in de app kan binnenkort.' }
+  if (!(await (connected ?? initConnection()))) return { error: 'De winkel is nu niet bereikbaar. Probeer het later nog eens.' }
+  const list = info.data.lessonProducts ?? Object.entries(LESSON_PRODUCTS).map(([productId, lessons]) => ({ productId, lessons }))
+  const products = ((await fetchProducts({ skus: list.map((p) => p.productId), type: 'in-app' })) ?? []) as Product[]
+  const offers = list
+    .map((p) => ({ lessons: p.lessons, product: products.find((x) => x.id === p.productId) }))
+    .filter((o): o is LessonOffer => !!o.product)
+    .sort((a, b) => a.lessons - b.lessons)
+  if (!offers.length) return { error: 'Losse lessen konden niet worden geladen. Probeer het later nog eens.' }
+  return { info: info.data, offers }
+}
+
+/** Betaalscherm voor een losse les (eenmalige aankoop). De afloop komt binnen via onPurchaseEvent. */
+export async function buyLesson(offer: LessonOffer, accountId: string) {
+  const sku = offer.product.id
+  if (Platform.OS === 'android') await requestPurchase({ type: 'in-app', request: { google: { skus: [sku], obfuscatedAccountId: accountId } } })
+  else await requestPurchase({ type: 'in-app', request: { apple: { sku, appAccountToken: accountId } } })
+}
+
 /** Betaalscherm van Apple/Google openen. De afloop komt binnen via onPurchaseEvent. */
 export async function buy(offer: StoreOffer, accountId: string) {
   const p = offer.product
@@ -165,11 +202,11 @@ export async function restore(): Promise<{ found: number; restored: number; mess
     const id = storeId(p)
     if (!id) continue
     found++
-    const r = await reportPurchase(STORE, id)
+    const r = await reportPurchase(STORE, id, p.productId)
     if (r.ok) {
       restored++
       if (r.data.me) onMe?.(r.data.me)
-      await finishTransaction({ purchase: p, isConsumable: false }).catch(() => {})
+      await finishTransaction({ purchase: p, isConsumable: isLesson(p) }).catch(() => {})
     } else message = r.error.message
   }
   return { found, restored, message }
