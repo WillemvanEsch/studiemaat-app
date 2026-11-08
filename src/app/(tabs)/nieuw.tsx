@@ -7,18 +7,21 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Image } from 'expo-image'
 import { router } from 'expo-router'
 import { useEffect, useState } from 'react'
-import { Alert, Linking, Pressable, StyleSheet, View } from 'react-native'
+import { Alert, Linking, Platform, Pressable, StyleSheet, View } from 'react-native'
 
 import { createLesson, fetchOptions } from '@/api'
 import { Icon } from '@/components/icon'
 import { ThemedText } from '@/components/themed-text'
-import { Button, Card, Chips, Field, Notice, Screen, Title } from '@/components/ui'
-import { Radius, Spacing } from '@/constants/theme'
+import { Button, Card, Chips, Field, Loading, Notice, Screen, Title } from '@/components/ui'
+import { DisplayFont, Radius, Spacing } from '@/constants/theme'
 import { useAuth } from '@/contexts/auth-context'
 import { useTheme } from '@/hooks/use-theme'
 import { MAX_PAGES, pickPhotos, takePhoto, uploadAll, type Photo } from '@/lib/photos'
 import { DEFAULT_SPLIT_TIP_FROM, etaText, lessonEtaSeconds } from '@/lib/eta'
+import { buyLesson, loadLessonOffers, onPurchaseEvent, type LessonOffer } from '@/lib/purchases'
 import { hasAiConsent, saveAiConsent } from '@/lib/storage'
+
+const STORE_TEXT = Platform.OS === 'ios' ? 'je Apple ID' : 'je Google-account'
 
 /** Zelfde vakken als op de website (studypro/src/lib/format.ts SUBJECTS). */
 const SUBJECTS = [
@@ -63,6 +66,47 @@ export default function NewLessonScreen() {
   useEffect(() => {
     hasAiConsent().then(setConsent)
   }, [])
+
+  // Geen abonnement, geen gratis periode en geen tegoed: dan meteen hier een losse les kunnen kopen (sinds 8 nov 2026,
+  // Wim: anders maak je foto's en zie je pas onderaan een grijze knop). Prijzen komen van de winkel zelf.
+  const noAccess = !!me && !me.access.hasAccess && (me.access.lessonCredits ?? 0) <= 0
+  const lessonOffers = useQuery({
+    queryKey: ['lesson-offers'],
+    queryFn: async () => {
+      const r = await loadLessonOffers()
+      if ('error' in r) throw new Error(r.error)
+      return r
+    },
+    enabled: noAccess && me?.access.kind === 'verlopen',
+    staleTime: 10 * 60 * 1000,
+    retry: false,
+  })
+  const [buying, setBuying] = useState(false)
+  const [buyMessage, setBuyMessage] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null)
+  useEffect(
+    () =>
+      onPurchaseEvent((e) => {
+        if (e.kind === 'busy') return setBuying(true)
+        setBuying(false)
+        if (e.kind === 'done' && e.lessons) {
+          setBuyMessage({ kind: 'ok', text: `Gelukt! Je hebt ${e.lessons === 1 ? 'een les' : `${e.lessons} lessen`} erbij. Maak hieronder je les.` })
+          refreshMe().catch(() => {})
+        }
+        if (e.kind === 'error') setBuyMessage({ kind: 'error', text: e.message })
+      }),
+    [refreshMe],
+  )
+  async function startLesson(offer: LessonOffer) {
+    if (!lessonOffers.data) return
+    setBuyMessage(null)
+    setBuying(true)
+    try {
+      await buyLesson(offer, lessonOffers.data.info.accountId)
+    } catch {
+      setBuying(false)
+      setBuyMessage({ kind: 'error', text: 'Het betaalscherm kon niet worden geopend. Probeer het nog eens.' })
+    }
+  }
 
   if (consent === false) {
     return (
@@ -138,13 +182,47 @@ export default function NewLessonScreen() {
       <Title sub="Fotografeer de bladzijdes die je moet leren. Studiemaat maakt er binnen een paar minuten een les van.">Nieuwe les</Title>
 
       {expired ? (
-        <Notice kind="warn">
-          <ThemedText type="small">
-            Je gratis periode of abonnement is afgelopen. Kies een abonnement, of koop een losse les voor die ene toets.
+        <Card style={{ borderColor: theme.primary, borderWidth: 2 }}>
+          <ThemedText style={styles.h2}>Koop eerst een les</ThemedText>
+          <ThemedText themeColor="textSecondary">
+            Je proefperiode of abonnement is afgelopen. Je lessen kun je gewoon blijven bekijken. Voor een nieuwe les koop je een
+            losse les, of je kiest een abonnement.
           </ThemedText>
-          <Button title="Abonnement of losse les" kind="secondary" onPress={() => router.push('/(tabs)/ik/abonnement')} />
-        </Notice>
+          {lessonOffers.isLoading ? <Loading /> : null}
+          {lessonOffers.data?.offers.map((o) => {
+            const bundle = o.lessons > 1
+            return (
+              <Pressable
+                key={o.product.id}
+                accessibilityRole="button"
+                disabled={buying}
+                onPress={() => startLesson(o)}
+                style={({ pressed }) => [
+                  styles.offer,
+                  { borderColor: bundle ? theme.primary : theme.border, backgroundColor: bundle ? theme.accent : theme.backgroundElement },
+                  pressed && { opacity: 0.7 },
+                ]}>
+                <Icon name={bundle ? 'sparkles' : 'book.fill'} size={20} tintColor={theme.primary} />
+                <View style={{ flex: 1 }}>
+                  <ThemedText style={{ fontWeight: 700 }}>{bundle ? `${o.lessons} losse lessen` : '1 losse les'}</ThemedText>
+                  <ThemedText type="small" themeColor="textSecondary">
+                    {bundle ? 'Voor je toetsweek' : 'Voor één toets'}
+                  </ThemedText>
+                </View>
+                <ThemedText style={{ fontWeight: 800, fontSize: 17 }}>{o.product.displayPrice}</ThemedText>
+              </Pressable>
+            )
+          })}
+          {buyMessage ? <Notice kind={buyMessage.kind}>{buyMessage.text}</Notice> : null}
+          <Button title="Of kies een abonnement" kind="secondary" disabled={buying} onPress={() => router.push('/(tabs)/ik/abonnement')} />
+          {lessonOffers.data ? (
+            <ThemedText type="small" themeColor="textSecondary">
+              Een losse les is een eenmalige aankoop via {STORE_TEXT}, er wordt niets verlengd.
+            </ThemedText>
+          ) : null}
+        </Card>
       ) : null}
+      {buyMessage?.kind === 'ok' && !expired ? <Notice kind="ok">{buyMessage.text}</Notice> : null}
       {onCredit ? (
         <Notice kind="ok">
           Je hebt nog {credits === 1 ? '1 les' : `${credits} lessen`} tegoed. Deze les gaat van je tegoed af (maximaal 20 foto{"'"}s).
@@ -209,7 +287,15 @@ export default function NewLessonScreen() {
           />
           {error ? <Notice kind="error">{error}</Notice> : null}
           {progress ? <Notice>{progress}</Notice> : null}
-          <Button title="Maak mijn les" icon="sparkles" loading={busy} disabled={!subject || !!expired} onPress={submit} />
+          {expired ? (
+            // Zonder abonnement of tegoed geen grijze knop zonder uitleg: zeg wat er nodig is.
+            <>
+              <Notice kind="warn">Je hebt nog geen les om te maken. Koop bovenaan een losse les of kies een abonnement; je foto&apos;s blijven staan.</Notice>
+              <Button title="Les of abonnement kopen" icon="bag.fill" onPress={() => router.push('/(tabs)/ik/abonnement')} />
+            </>
+          ) : (
+            <Button title="Maak mijn les" icon="sparkles" loading={busy} disabled={!subject} onPress={submit} />
+          )}
         </>
       ) : null}
     </Screen>
@@ -217,6 +303,8 @@ export default function NewLessonScreen() {
 }
 
 const styles = StyleSheet.create({
+  h2: { fontSize: 20, lineHeight: 26, fontFamily: DisplayFont.extraBold },
+  offer: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, borderRadius: Radius.lg, borderWidth: 1, padding: Spacing.three },
   actions: { flexDirection: 'row', gap: Spacing.two },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
   thumb: { width: 100, height: 134, borderRadius: Radius.md, overflow: 'hidden', borderWidth: 1 },
