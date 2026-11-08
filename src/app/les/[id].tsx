@@ -16,8 +16,9 @@ import { Icon } from '@/components/icon'
 import { RichText } from '@/components/rich-text'
 import { SubjectChip } from '@/components/subject-chip'
 import { ThemedText } from '@/components/themed-text'
-import { Button, Card, Chips, Loading, Notice, Screen } from '@/components/ui'
+import { Button, Card, Chips, Grid, Loading, Notice, Screen } from '@/components/ui'
 import { DisplayFont, Radius, Spacing } from '@/constants/theme'
+import { useLayout } from '@/hooks/use-layout'
 import { useTheme } from '@/hooks/use-theme'
 import { etaText, remainingText } from '@/lib/eta'
 
@@ -86,6 +87,7 @@ export default function LessonScreen() {
 
 function LessonBody({ lesson }: { lesson: Lesson }) {
   const theme = useTheme()
+  const { isTablet } = useLayout()
   const queryClient = useQueryClient()
   const [tab, setTab] = useState<Tab>('uittreksel')
   const [count, setCount] = useState<'10' | '20' | '30'>('20')
@@ -211,13 +213,16 @@ function LessonBody({ lesson }: { lesson: Lesson }) {
       {(tab === 'begrippen' || tab === 'kaarten') && offer.includes('begrippen') ? <MakeExtras lesson={lesson} part="begrippen" /> : null}
       {tab === 'begrippen' ? (
         c.begrippen.length ? (
-          c.begrippen.map((b, i) => (
-            <Card key={i}>
-              <ThemedText style={{ fontWeight: 700, fontSize: 17 }}>{b.term}</ThemedText>
-              <ThemedText>{b.uitleg}</ThemedText>
-              {b.voorbeeld ? <ThemedText themeColor="textSecondary">Bijv. {b.voorbeeld}</ThemedText> : null}
-            </Card>
-          ))
+          // Op een tablet twee kolommen begrippen naast elkaar.
+          <Grid>
+            {c.begrippen.map((b, i) => (
+              <Card key={i} style={isTablet ? { flex: 1 } : undefined}>
+                <ThemedText style={{ fontWeight: 700, fontSize: 17 }}>{b.term}</ThemedText>
+                <ThemedText>{b.uitleg}</ThemedText>
+                {b.voorbeeld ? <ThemedText themeColor="textSecondary">Bijv. {b.voorbeeld}</ThemedText> : null}
+              </Card>
+            ))}
+          </Grid>
         ) : offer.includes('begrippen') ? null : (
           <ThemedText themeColor="textSecondary">Deze les heeft geen begrippen.</ThemedText>
         )
@@ -397,7 +402,8 @@ function Photos({ lesson }: { lesson: Lesson }) {
   }, [])
   if (!headers) return <Loading />
   return (
-    <View style={{ gap: Spacing.three }}>
+    // Op een tablet twee foto's naast elkaar.
+    <Grid>
       {lesson.pages.map((p) => (
         <Image
           key={p.id}
@@ -407,7 +413,7 @@ function Photos({ lesson }: { lesson: Lesson }) {
           accessibilityLabel={`Foto ${p.position + 1}`}
         />
       ))}
-    </View>
+    </Grid>
   )
 }
 

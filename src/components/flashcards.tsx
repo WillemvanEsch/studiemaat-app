@@ -7,10 +7,12 @@ import type { LessonContent } from '@/api'
 import { ThemedText } from '@/components/themed-text'
 import { Button } from '@/components/ui'
 import { Radius, Spacing } from '@/constants/theme'
+import { useLayout } from '@/hooks/use-layout'
 import { useTheme } from '@/hooks/use-theme'
 
 export function Flashcards({ cards }: { cards: LessonContent['begrippen'] }) {
   const theme = useTheme()
+  const { isTablet } = useLayout()
   const [i, setI] = useState(0)
   const [back, setBack] = useState(false)
   if (!cards.length) return <ThemedText themeColor="textSecondary">Deze les heeft geen begrippen.</ThemedText>
@@ -25,7 +27,7 @@ export function Flashcards({ cards }: { cards: LessonContent['begrippen'] }) {
         accessibilityRole="button"
         accessibilityHint="Tik om de kaart om te draaien"
         onPress={() => setBack((b) => !b)}
-        style={[styles.card, { backgroundColor: back ? theme.accent : theme.backgroundElement, borderColor: theme.border }]}>
+        style={[styles.card, isTablet && styles.cardTablet, { backgroundColor: back ? theme.accent : theme.backgroundElement, borderColor: theme.border }]}>
         <ThemedText type="small" themeColor="textSecondary">
           {back ? 'Uitleg' : 'Begrip'} · {(i % cards.length) + 1} van {cards.length}
         </ThemedText>
@@ -58,6 +60,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: Spacing.three,
   },
+  // Op een tablet een grotere kaart, als een echt systeemkaartje.
+  cardTablet: { minHeight: 380, padding: Spacing.five },
   term: { fontSize: 28, lineHeight: 36, fontWeight: 800, textAlign: 'center' },
   backText: { fontSize: 19, lineHeight: 28 },
   nav: { flexDirection: 'row', gap: Spacing.two },

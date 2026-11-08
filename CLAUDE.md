@@ -62,7 +62,9 @@ iconen-wrapper, push en versie-check. Bij twijfel daar kijken hoe het is opgelos
 - `src/contexts/auth-context.tsx` — `useAuth()`: status, `me`, inloggen, uitloggen.
 - `src/lib/` — `storage` (SecureStore), `push-notifications`, `purchases`, `photos`, `version`, `sentry`, `format`,
   `appearance` (licht/donker/automatisch via `Appearance.setColorScheme`, keuze in Instellingen).
-- `src/components/` — `ui.tsx` (Screen, Card, Button, Field, Notice, Chips…), `list-row.tsx`, `icon.tsx`, `rich-text.tsx`,
+- `src/hooks/use-layout.ts` — tablets (kortste kant ≥ 600): `ThemedText` maakt alle tekst 15% groter, `Screen` meer lucht,
+  `Grid` zet lessen/begrippen/foto's in twee kolommen. iPad (`supportsTablet`) en Android-tablets kunnen de app al installeren.
+- `src/components/` — `ui.tsx` (Screen, Card, Button, Field, Notice, Chips, Grid…), `list-row.tsx`, `icon.tsx`, `rich-text.tsx`,
   `flashcards.tsx`, `app-tabs.tsx`, `version-gate.tsx`.
 
 ## Inloggen

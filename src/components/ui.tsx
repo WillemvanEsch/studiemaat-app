@@ -3,7 +3,7 @@
  * Kleuren altijd via useTheme(), zodat donkere modus overal klopt.
  */
 
-import type { ReactNode } from 'react'
+import { Children, type ReactNode } from 'react'
 import {
   ActivityIndicator,
   Pressable,
@@ -23,6 +23,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { Icon } from '@/components/icon'
 import { ThemedText } from '@/components/themed-text'
 import { DisplayFont, MaxContentWidth, Radius, Spacing } from '@/constants/theme'
+import { useLayout } from '@/hooks/use-layout'
 import { useTheme } from '@/hooks/use-theme'
 
 /** Scherm met veilige randen en (standaard) scrollen. */
@@ -33,18 +34,21 @@ export function Screen({
   ...rest
 }: { children: ReactNode; scroll?: boolean; edges?: ('top' | 'bottom')[] } & ScrollViewProps) {
   const theme = useTheme()
+  const { isTablet } = useLayout()
+  // Tablet: meer lucht rondom en tussen de blokken, zoals de website op een computer.
+  const content = isTablet ? [styles.content, styles.contentTablet] : styles.content
   return (
     <SafeAreaView edges={edges} style={{ flex: 1, backgroundColor: theme.background }}>
       {scroll ? (
         <ScrollView
-          contentContainerStyle={styles.content}
+          contentContainerStyle={content}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
           {...rest}>
           {children}
         </ScrollView>
       ) : (
-        <View style={[styles.content, { flex: 1 }]}>{children}</View>
+        <View style={[content, { flex: 1 }]}>{children}</View>
       )}
     </SafeAreaView>
   )
@@ -151,6 +155,24 @@ export function Notice({ kind = 'info', children }: { kind?: 'info' | 'ok' | 'wa
   )
 }
 
+/**
+ * Blokken onder elkaar op een telefoon, in twee kolommen op een tablet (lessen, begrippen, foto's).
+ * Elk kind krijgt de helft van de breedte; kaarten in dezelfde rij worden even hoog.
+ */
+export function Grid({ children }: { children: ReactNode }) {
+  const { columns } = useLayout()
+  if (columns === 1) return <View style={{ gap: Spacing.three }}>{children}</View>
+  return (
+    <View style={styles.grid}>
+      {Children.toArray(children).map((child, i) => (
+        <View key={i} style={styles.gridItem}>
+          {child}
+        </View>
+      ))}
+    </View>
+  )
+}
+
 export function Loading() {
   const theme = useTheme()
   return (
@@ -201,6 +223,7 @@ const styles = StyleSheet.create({
     maxWidth: MaxContentWidth,
     alignSelf: 'center',
   },
+  contentTablet: { paddingHorizontal: Spacing.five, paddingTop: Spacing.four, gap: Spacing.four },
   // Koppen in het lettertype van de website. Geen fontWeight: de dikte zit in het lettertype zelf.
   title: { fontSize: 30, lineHeight: 36, fontFamily: DisplayFont.extraBold, letterSpacing: -0.5 },
   heading: { fontSize: 22, lineHeight: 28, fontFamily: DisplayFont.extraBold, letterSpacing: -0.3 },
@@ -218,6 +241,9 @@ const styles = StyleSheet.create({
   input: { minHeight: 50, borderWidth: 1, borderRadius: Radius.md, paddingHorizontal: Spacing.three, fontSize: 17 },
   notice: { borderRadius: Radius.md, padding: Spacing.three, gap: Spacing.one },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: Spacing.four },
+  // 48,5% + ruimte ertussen: twee kolommen zonder dat percentages en `gap` elkaar in de weg zitten.
+  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: Spacing.three },
+  gridItem: { width: '48.5%' },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
   chip: { borderWidth: 1.5, borderRadius: Radius.full, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two },
 })

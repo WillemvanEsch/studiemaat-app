@@ -14,9 +14,10 @@ import { Wordmark } from '@/components/brand'
 import { SubjectChip } from '@/components/subject-chip'
 import { Icon } from '@/components/icon'
 import { ThemedText } from '@/components/themed-text'
-import { Button, Card, Heading, Loading, Notice, Screen } from '@/components/ui'
+import { Button, Card, Grid, Heading, Loading, Notice, Screen } from '@/components/ui'
 import { DisplayFont, Radius, Spacing } from '@/constants/theme'
 import { useAuth } from '@/contexts/auth-context'
+import { useLayout } from '@/hooks/use-layout'
 import { usePullRefresh } from '@/hooks/use-pull-refresh'
 import { useTheme } from '@/hooks/use-theme'
 import { subscriptionView } from '@/lib/subscription'
@@ -163,10 +164,13 @@ export default function LessonsScreen() {
               ))}
             </View>
           ) : null}
-          <NewLessonCard />
-          {shown.map((l) => (
-            <LessonCard key={l.id} lesson={l} />
-          ))}
+          {/* Op een tablet twee kolommen naast elkaar. */}
+          <Grid>
+            <NewLessonCard />
+            {shown.map((l) => (
+              <LessonCard key={l.id} lesson={l} />
+            ))}
+          </Grid>
         </>
       ) : null}
     </Screen>
@@ -221,11 +225,12 @@ function Filter({ label, active, onPress }: { label: string; active: boolean; on
 
 function NewLessonCard() {
   const theme = useTheme()
+  const { isTablet } = useLayout()
   return (
     <Pressable
       accessibilityRole="button"
       onPress={() => router.push('/(tabs)/nieuw')}
-      style={({ pressed }) => [styles.newCard, { borderColor: theme.dashed, opacity: pressed ? 0.7 : 1 }]}>
+      style={({ pressed }) => [styles.newCard, isTablet && { flex: 1 }, { borderColor: theme.dashed, opacity: pressed ? 0.7 : 1 }]}>
       <View style={[styles.plus, { backgroundColor: theme.primary }]}>
         <Icon name="plus" size={22} tintColor={theme.primaryForeground} />
       </View>
@@ -241,8 +246,10 @@ function NewLessonCard() {
 
 function LessonCard({ lesson }: { lesson: LessonListItem }) {
   const theme = useTheme()
+  const { isTablet } = useLayout()
   return (
-    <Card onPress={() => router.push(`/les/${lesson.id}`)}>
+    // Op een tablet vult de kaart zijn vak in het raster, zodat kaarten naast elkaar even hoog zijn.
+    <Card onPress={() => router.push(`/les/${lesson.id}`)} style={isTablet ? { flex: 1, justifyContent: 'space-between' } : undefined}>
       <View style={styles.spread}>
         <SubjectChip subject={lesson.subject} />
         <ThemedText type="small" themeColor="textSecondary">
