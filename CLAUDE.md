@@ -111,6 +111,8 @@ verstuurd. Geef dat account in Beheer "Altijd gratis".
 
 `ik/uitnodigen`: delen van de persoonlijke link `shareUrl` (studiemaat.nl/vriend/<code>) via het deelmenu, of per mail.
 Wie via de link op de website een account maakt, krijgt de vriendenmaand (regels in studypro `auth.ts`/`invites.ts`).
+Sinds 8 nov 2026 geen maximum meer (`max` komt nog mee, nu 1000) en de ambassadeursbeloning: neemt een vriend een jaar, dan
+krijg je na 14 dagen een gratis maand (`rewards` in `/mobile/invites`, regels in website `rewards.ts`). Push `data.url = /uitnodigen`.
 
 ## Push
 

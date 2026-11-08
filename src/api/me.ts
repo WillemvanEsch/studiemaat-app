@@ -1,5 +1,5 @@
 import { apiFetch } from './client'
-import type { Difficulty, Invite, Me, Options, ScanOptions } from './types'
+import type { Difficulty, Invite, Me, Options, Reward, ScanOptions } from './types'
 
 export const fetchMe = () => apiFetch<Me>('/mobile/me')
 
@@ -21,6 +21,15 @@ export const updateMe = (input: UpdateMeInput) => apiFetch<Me>('/mobile/me', { m
 export const deleteAccount = () =>
   apiFetch<{ deleted: boolean; requested?: boolean; message?: string }>('/mobile/me', { method: 'DELETE' })
 
-export const fetchInvites = () => apiFetch<{ invites: Invite[]; max: number; friendDays: number; shareUrl?: string }>('/mobile/invites')
+export const fetchInvites = () => apiFetch<{
+    invites: Invite[]
+    max: number
+    friendDays: number
+    shareUrl?: string
+    // Sinds 8 nov 2026 (oudere website: ontbreekt).
+    rewards?: Reward[]
+    rewardMonths?: number
+    rewardWaitDays?: number
+  }>('/mobile/invites')
 
 export const sendInvite = (email: string) => apiFetch<{ sent: string }>('/mobile/invites', { method: 'POST', body: { email } })

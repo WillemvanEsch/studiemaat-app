@@ -1,4 +1,7 @@
-/** Vrienden uitnodigen: zij krijgen een gratis periode. Zelfde regels als op de website (maximum, alleen nieuwe mailadressen). */
+/**
+ * Vrienden uitnodigen: zij krijgen een gratis periode. Zelfde regels als op de website (alleen nieuwe mailadressen).
+ * Sinds 8 nov 2026 geen maximum meer, en de ambassadeursbeloning: neemt een vriend een jaar, dan krijg jij een gratis maand.
+ */
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
@@ -10,6 +13,7 @@ import { ThemedText } from '@/components/themed-text'
 import { Button, Card, Field, Loading, Notice, Screen } from '@/components/ui'
 import { DisplayFont, Spacing } from '@/constants/theme'
 import { useTheme } from '@/hooks/use-theme'
+import { formatDate } from '@/lib/format'
 
 export default function InviteScreen() {
   const theme = useTheme()
@@ -37,8 +41,11 @@ export default function InviteScreen() {
 
   if (invites.isLoading) return <Loading />
   const d = invites.data
+  // Geen maximum meer; oudere websites gaven er nog een mee (10).
   const left = d ? Math.max(0, d.max - d.invites.length) : 0
   const days = d?.friendDays ?? 30
+  const rewards = d?.rewards ?? []
+  const earned = rewards.filter((r) => r.status !== 'wacht').length
 
   return (
     <Screen edges={[]}>
@@ -46,8 +53,12 @@ export default function InviteScreen() {
         <ThemedText style={{ fontSize: 22, lineHeight: 28, fontFamily: DisplayFont.extraBold }}>Geef een maand Studiemaat cadeau</ThemedText>
         <ThemedText themeColor="textSecondary">
           Deel je eigen link via WhatsApp of waar je maar wilt. Wie via jouw link een account maakt, krijgt {days} dagen gratis.
-          {d ? ` Je kunt nog ${left} ${left === 1 ? 'vriend' : 'vrienden'} uitnodigen.` : ''}
         </ThemedText>
+        {d?.rewards ? (
+          <Notice kind="info">
+            {'En jij verdient gratis maanden: neemt een vriend die jij uitnodigde een jaarabonnement? Dan krijg jij een maand Studiemaat cadeau. Voor elke vriend opnieuw.'}
+          </Notice>
+        ) : null}
         <Button
           title="Deel je link"
           icon="square.and.arrow.up"
@@ -80,6 +91,32 @@ export default function InviteScreen() {
         {send.isError ? <Notice kind="error">{(send.error as Error).message}</Notice> : null}
         <Button title="Uitnodiging sturen" kind="secondary" icon="envelope.badge" disabled={!email.includes('@') || !left} loading={send.isPending} onPress={() => send.mutate()} />
       </Card>
+
+      {rewards.length ? (
+        <Card>
+          <ThemedText type="smallBold">{earned ? `Jouw gratis maanden · ${earned} verdiend` : 'Jouw gratis maanden'}</ThemedText>
+          {rewards.map((r, i) => (
+            <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two }}>
+              <Icon name={r.status === 'wacht' ? 'clock' : 'gift.fill'} size={18} tintColor={r.status === 'wacht' ? theme.textSecondary : theme.success} />
+              <View style={{ flex: 1 }}>
+                <ThemedText>{`${r.friend} nam een jaar`}</ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">
+                  {r.status === 'wacht'
+                    ? `Je maand komt op ${formatDate(r.dueAt!)}`
+                    : r.status === 'tegoed'
+                      ? 'Tegoed: gaat in als je abonnement in de app stopt'
+                      : r.how === 'periode'
+                        ? `Gratis tot en met ${formatDate(r.endsAt!)}`
+                        : `Je abonnement loopt gratis door tot ${formatDate(r.endsAt!)}`}
+                </ThemedText>
+              </View>
+            </View>
+          ))}
+          <ThemedText type="small" themeColor="textSecondary">
+            {`Je maand komt ${d?.rewardWaitDays ?? 14} dagen na de aankoop van je vriend. Wordt de aankoop teruggedraaid, dan vervalt de maand.`}
+          </ThemedText>
+        </Card>
+      ) : null}
 
       {d?.invites.length ? (
         <Card>

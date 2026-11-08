@@ -260,3 +260,15 @@ export interface Invite {
   email: string
   accepted_at: string | null
 }
+
+/** Ambassadeursbeloning (sinds 8 nov 2026): een vriend nam een jaar, jij krijgt een gratis maand. */
+export interface Reward {
+  friend: string
+  /** wacht = bedenktijd van de vriend loopt nog; tegoed = gaat in als je app-abonnement stopt. */
+  status: 'wacht' | 'gegeven' | 'tegoed'
+  dueAt: string | null
+  /** periode (gratis maand erachter), apple of google (app-abonnement een maand later verlengd) */
+  how: string | null
+  startsAt: string | null
+  endsAt: string | null
+}

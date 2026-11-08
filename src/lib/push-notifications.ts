@@ -95,6 +95,8 @@ function routeFromUrl(url: string | undefined): string {
   if (test) return `/toets/${test[1]}`
   // Herinnering "Maak je eerste les": meteen naar de camera/foto's.
   if (/^\/nieuw\b/.test(url)) return '/(tabs)/nieuw'
+  // "Je hebt een gratis maand verdiend" (ambassadeursbeloning): naar Uitnodigen.
+  if (/^\/uitnodigen\b/.test(url)) return '/(tabs)/ik/uitnodigen'
   return '/(tabs)'
 }
 
