@@ -23,6 +23,7 @@
 
 import * as Sentry from '@sentry/react-native'
 import Constants from 'expo-constants'
+import { Platform } from 'react-native'
 
 const dsn =
   process.env.EXPO_PUBLIC_SENTRY_DSN ||
@@ -36,6 +37,10 @@ export function initSentry() {
     if (dsn) console.log('[Sentry] dev mode — skipping init')
     return
   }
+  // Op het web draait de app alleen voor screenshots en tests (headless Chrome op
+  // localhost). Native modules zoals ExpoIap en meldingen bestaan daar niet; die
+  // fouten zijn geen echte crashes en horen niet als alert in Sentry.
+  if (Platform.OS === 'web') return
   if (!dsn) {
     console.warn('[Sentry] EXPO_PUBLIC_SENTRY_DSN not set — crash reporting disabled')
     return
