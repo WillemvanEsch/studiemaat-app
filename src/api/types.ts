@@ -9,6 +9,8 @@ export interface ApiError {
   /** NETWORK_ERROR | UNAUTHORIZED | NO_ACCESS (402) | LIMIT (429) | API_ERROR */
   code: string
   message: string
+  /** Reden van de website, als die er een meegaf (bv. "other_account" bij een winkelaankoop). */
+  reason?: string
 }
 
 /** store: abonnement via de App Store of Google Play (opzeggen in de telefoon), anders null/afwezig. */

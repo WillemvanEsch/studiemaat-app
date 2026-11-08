@@ -194,12 +194,13 @@ export async function buy(offer: StoreOffer, accountId: string) {
 }
 
 /** "Aankopen herstellen": alles wat de winkel nog als lopend kent opnieuw aan de website melden. */
-export async function restore(): Promise<{ found: number; restored: number; message?: string }> {
+export async function restore(): Promise<{ found: number; restored: number; message?: string; otherAccount?: boolean }> {
   if (!(await (connected ?? initConnection()))) return { found: 0, restored: 0, message: 'De winkel is nu niet bereikbaar.' }
   const purchases = await getAvailablePurchases()
   let found = 0
   let restored = 0
   let message: string | undefined
+  let otherAccount = false
   for (const p of purchases) {
     const id = storeId(p)
     if (!id) continue
@@ -209,9 +210,12 @@ export async function restore(): Promise<{ found: number; restored: number; mess
       restored++
       if (r.data.me) onMe?.(r.data.me)
       await finishTransaction({ purchase: p, isConsumable: isLesson(p) }).catch(() => {})
-    } else message = r.error.message
+    } else {
+      message = r.error.message
+      if (r.error.reason === 'other_account') otherAccount = true
+    }
   }
-  return { found, restored, message }
+  return { found, restored, message, otherAccount }
 }
 
 /**
@@ -219,9 +223,9 @@ export async function restore(): Promise<{ found: number; restored: number; mess
  * de controle bij Google of Apple even mislukte. We melden het opnieuw; lukt dat niet, dan geeft dit de melding terug
  * en laat het abonnementsscherm geen koopknoppen zien. Anders betaalt iemand per ongeluk twee keer.
  */
-export async function checkOpenPurchases(): Promise<{ open: boolean; message?: string }> {
+export async function checkOpenPurchases(): Promise<{ open: boolean; message?: string; otherAccount?: boolean }> {
   const r = await restore()
-  return r.found > r.restored ? { open: true, message: r.message } : { open: false }
+  return r.found > r.restored ? { open: true, message: r.message, otherAccount: r.otherAccount } : { open: false }
 }
 
 /**

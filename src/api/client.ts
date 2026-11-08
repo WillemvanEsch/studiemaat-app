@@ -92,5 +92,6 @@ export async function apiFetch<T = unknown>(path: string, options: ApiFetchOptio
         : 'Er ging iets mis.'
   const code =
     res.status === 401 ? 'UNAUTHORIZED' : res.status === 402 ? 'NO_ACCESS' : res.status === 429 ? 'LIMIT' : 'API_ERROR'
-  return { ok: false, status: res.status, error: { code, message } }
+  const reason = data && typeof data === 'object' && typeof (data as { reason?: unknown }).reason === 'string' ? (data as { reason: string }).reason : undefined
+  return { ok: false, status: res.status, error: { code, message, ...(reason ? { reason } : {}) } }
 }

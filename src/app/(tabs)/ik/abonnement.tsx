@@ -223,7 +223,21 @@ export default function SubscriptionScreen() {
       {view.buyNote && !canBuy ? <Notice>{view.buyNote}</Notice> : null}
       {message ? <Notice kind={message.kind}>{message.text}</Notice> : null}
 
-      {waiting ? (
+      {/* Op deze Apple ID / dit Google-account loopt nog een abonnement van een ander Studiemaat-account (bv. een oud
+          testaccount). De winkel staat dan geen tweede abonnement toe; uitleggen hoe je verder kunt. */}
+      {waiting && open.data?.otherAccount ? (
+        <Card>
+          <ThemedText style={styles.h2}>Abonnement van een ander account</ThemedText>
+          <ThemedText themeColor="textSecondary">
+            Op {STORE_TEXT} loopt nog een abonnement dat bij een ander Studiemaat-account hoort. Log in met dat account, of zeg
+            het op via Abonnement beheren. Als het is afgelopen, kun je hier een nieuw abonnement nemen.
+          </ThemedText>
+          <Button title="Abonnement beheren" onPress={() => manageSubscriptions().catch(() => {}).finally(() => void refetchOpen())} />
+          <Button title="Opnieuw controleren" kind="ghost" loading={open.isFetching} onPress={() => refetchOpen()} />
+        </Card>
+      ) : null}
+
+      {waiting && !open.data?.otherAccount ? (
         <Card>
           <ThemedText style={styles.h2}>Je aankoop wordt verwerkt</ThemedText>
           <ThemedText themeColor="textSecondary">
