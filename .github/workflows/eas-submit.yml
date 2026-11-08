@@ -1,0 +1,18 @@
+# De laatste iOS-build bij Expo naar App Store Connect (TestFlight) sturen, bv. als het insturen bij het bouwen mislukte.
+# Actions → EAS submit → Run workflow. Nodig: repository-secret EXPO_TOKEN en de App Store Connect API-sleutel in EAS.
+name: EAS submit
+
+on:
+  workflow_dispatch:
+
+jobs:
+  submit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+      - name: Insturen
+        run: eas submit --platform ios --profile production --latest --non-interactive --wait

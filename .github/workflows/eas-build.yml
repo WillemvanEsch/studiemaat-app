@@ -39,5 +39,11 @@ jobs:
           npm run lint
 
       # --no-wait: de build loopt verder bij Expo (iOS duurt ~20-30 min), voortgang op expo.dev.
-      - name: Bouwen en insturen
-        run: eas build --platform ${{ inputs.platform }} --profile production --auto-submit --non-interactive --no-wait
+      # Android zonder --auto-submit: daarvoor ontbreekt (nog) de Google-servicesleutel in EAS; de .aab upload je in Play
+      # Console of met `eas submit -p android` op een computer.
+      - name: iOS bouwen en naar TestFlight
+        if: inputs.platform != 'android'
+        run: eas build --platform ios --profile production --auto-submit --non-interactive --no-wait
+      - name: Android bouwen
+        if: inputs.platform != 'ios'
+        run: eas build --platform android --profile production --non-interactive --no-wait
