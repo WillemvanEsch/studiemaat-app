@@ -157,7 +157,9 @@ Zelfde drie routes als bij bieden.nl:
   Nodig: secret `EXPO_TOKEN` in GitHub. Met de hand: eerst `git pull`, dan `eas update --branch production --auto`.
   Alle telefoons met dezelfde `version` krijgen het bij de volgende start.
 - **C. Native** (nieuw native package, `app.json` native delen, versie ophogen) → `eas build --profile production`
-  + `eas submit` + review bij Apple/Google.
+  + `eas submit` + review bij Apple/Google. Kan ook zonder eigen computer: Actions → **EAS build** → Run workflow
+  (`.github/workflows/eas-build.yml`, bouwt bij Expo en stuurt automatisch in: iOS naar TestFlight, Android naar intern).
+  Let op: `runtimeVersion` volgt `version`, dus na ophogen krijgen telefoons met de oude versie geen OTA-updates meer.
 Bij twijfel: C.
 
 ## Eerste keer instellen (nog te doen, okt 2026)

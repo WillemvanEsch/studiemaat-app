@@ -1,0 +1,43 @@
+# Nieuwe app-versie bouwen en naar de winkels sturen (route C uit CLAUDE.md), met de hand te starten:
+# Actions → EAS build → Run workflow. Bouwt op de servers van Expo (EAS Build) met de sleutels die daar staan, en stuurt
+# de build met `--auto-submit` door: iOS naar App Store Connect (TestFlight), Android naar de interne testtrack.
+# Daarna zelf in App Store Connect / Play Console de versie ter beoordeling insturen of doorzetten naar productie.
+#
+# Nodig: repository-secret EXPO_TOKEN (zelfde als bij EAS update).
+name: EAS build
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: 'ios, android of all'
+        required: true
+        default: all
+        type: choice
+        options: [all, ios, android]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Controleren
+        run: |
+          npm ci
+          npm run typecheck
+          npm run lint
+
+      # --no-wait: de build loopt verder bij Expo (iOS duurt ~20-30 min), voortgang op expo.dev.
+      - name: Bouwen en insturen
+        run: eas build --platform ${{ inputs.platform }} --profile production --auto-submit --non-interactive --no-wait
