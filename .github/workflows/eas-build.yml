@@ -1,6 +1,6 @@
 # Nieuwe app-versie bouwen en naar de winkels sturen (route C uit CLAUDE.md), met de hand te starten:
 # Actions → EAS build → Run workflow. Bouwt op de servers van Expo (EAS Build) met de sleutels die daar staan, en stuurt
-# de build met `--auto-submit` door: iOS naar App Store Connect (TestFlight), Android naar de interne testtrack.
+# de build met `--auto-submit` door: iOS naar App Store Connect (TestFlight), Android naar de interne testtrack of productie.
 # Daarna zelf in App Store Connect / Play Console de versie ter beoordeling insturen of doorzetten naar productie.
 #
 # Nodig: repository-secret EXPO_TOKEN (zelfde als bij EAS update).
@@ -15,6 +15,12 @@ on:
         default: all
         type: choice
         options: [all, ios, android]
+      android_track:
+        description: 'Android insturen naar: intern (testtrack) of productie (meteen live na controle door Google)'
+        required: true
+        default: intern
+        type: choice
+        options: [intern, productie]
 
 jobs:
   build:
@@ -39,11 +45,11 @@ jobs:
           npm run lint
 
       # --no-wait: de build loopt verder bij Expo (iOS duurt ~20-30 min), voortgang op expo.dev.
-      # Android zonder --auto-submit: daarvoor ontbreekt (nog) de Google-servicesleutel in EAS; de .aab upload je in Play
-      # Console of met `eas submit -p android` op een computer.
+      # Android gaat met de Google-servicesleutel (serviceaccount eas-submit@studiemaat-app, staat in EAS sinds
+      # 8 nov 2026) naar de interne testtrack, of met submit-profiel `productie` naar productie.
       - name: iOS bouwen en naar TestFlight
         if: inputs.platform != 'android'
         run: eas build --platform ios --profile production --auto-submit --non-interactive --no-wait
-      - name: Android bouwen
+      - name: Android bouwen en insturen
         if: inputs.platform != 'ios'
-        run: eas build --platform android --profile production --non-interactive --no-wait
+        run: eas build --platform android --profile production --auto-submit-with-profile ${{ inputs.android_track == 'productie' && 'productie' || 'production' }} --non-interactive --no-wait

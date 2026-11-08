@@ -1,9 +1,23 @@
-# De laatste iOS-build bij Expo naar App Store Connect (TestFlight) sturen, bv. als het insturen bij het bouwen mislukte.
-# Actions → EAS submit → Run workflow. Nodig: repository-secret EXPO_TOKEN en de App Store Connect API-sleutel in EAS.
+# De laatste build bij Expo alsnog naar de winkel sturen, bv. als het insturen bij het bouwen mislukte.
+# Actions → EAS submit → Run workflow. iOS gaat naar App Store Connect (TestFlight), Android naar de interne testtrack
+# of productie. Nodig: repository-secret EXPO_TOKEN en de winkelsleutels in EAS.
 name: EAS submit
 
 on:
   workflow_dispatch:
+    inputs:
+      platform:
+        description: 'ios of android'
+        required: true
+        default: ios
+        type: choice
+        options: [ios, android]
+      android_track:
+        description: 'Android: intern of productie'
+        required: true
+        default: intern
+        type: choice
+        options: [intern, productie]
 
 jobs:
   submit:
@@ -15,4 +29,4 @@ jobs:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
       - name: Insturen
-        run: eas submit --platform ios --profile production --latest --non-interactive --wait
+        run: eas submit --platform ${{ inputs.platform }} --profile ${{ inputs.platform == 'android' && inputs.android_track == 'productie' && 'productie' || 'production' }} --latest --non-interactive --wait

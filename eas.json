@@ -46,6 +46,12 @@
       "android": {
         "track": "internal"
       }
+    },
+    "productie": {
+      "extends": "production",
+      "android": {
+        "track": "production"
+      }
     }
   }
 }

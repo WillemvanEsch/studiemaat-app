@@ -158,7 +158,7 @@ Zelfde drie routes als bij bieden.nl:
   Alle telefoons met dezelfde `version` krijgen het bij de volgende start.
 - **C. Native** (nieuw native package, `app.json` native delen, versie ophogen) → `eas build --profile production`
   + `eas submit` + review bij Apple/Google. Kan ook zonder eigen computer: Actions → **EAS build** → Run workflow
-  (`.github/workflows/eas-build.yml`, bouwt bij Expo; iOS gaat vanzelf naar TestFlight, Android-.aab zelf uploaden in Play Console; `eas-submit.yml` stuurt de laatste iOS-build alsnog in).
+  (`.github/workflows/eas-build.yml`, bouwt bij Expo; iOS gaat vanzelf naar TestFlight, Android naar de interne testtrack of (keuze `productie`) productie via serviceaccount `eas-submit@studiemaat-app` (sleutel in EAS); `eas-submit.yml` stuurt de laatste iOS-build alsnog in).
   Let op: `runtimeVersion` volgt `version`, dus na ophogen krijgen telefoons met de oude versie geen OTA-updates meer.
 Bij twijfel: C.
 
