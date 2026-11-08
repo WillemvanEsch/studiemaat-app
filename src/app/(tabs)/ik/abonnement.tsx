@@ -324,7 +324,9 @@ export default function SubscriptionScreen() {
         </>
       ) : null}
 
-      {lessonsForSale && !waiting ? (
+      {/* Losse lessen staan los van een openstaand abonnement. Kan de winkel ze (nog) niet leveren, bv. zolang Apple ze
+          keurt, dan geen kaartje met een foutmelding (behalve als er nog tegoed is om te melden). */}
+      {lessonsForSale && (!lessonOffers.isError || !!a.lessonCredits) ? (
         <Card>
           <ThemedText style={styles.h2}>Eén toets op komst?</ThemedText>
           <ThemedText themeColor="textSecondary">
@@ -335,7 +337,6 @@ export default function SubscriptionScreen() {
             <Notice kind="ok">Je hebt nog {a.lessonCredits === 1 ? '1 les' : `${a.lessonCredits} lessen`} tegoed. Maak je les via het tabblad Nieuw.</Notice>
           ) : null}
           {lessonOffers.isLoading ? <Loading /> : null}
-          {lessonOffers.isError ? <Notice>{(lessonOffers.error as Error).message}</Notice> : null}
           {lessonOffers.data?.offers.map((o) => {
             const bundle = o.lessons > 1
             const per = bundle && o.product.price ? money(o.product.price / o.lessons, o.product.currency) : null
@@ -374,9 +375,11 @@ export default function SubscriptionScreen() {
               </Pressable>
             )
           })}
-          <ThemedText type="small" themeColor="textSecondary">
-            Eenmalige aankoop via {STORE_TEXT}, er wordt niets verlengd. Ga je vaker oefenen? Dan is een abonnement voordeliger.
-          </ThemedText>
+          {lessonOffers.data ? (
+            <ThemedText type="small" themeColor="textSecondary">
+              Eenmalige aankoop via {STORE_TEXT}, er wordt niets verlengd. Ga je vaker oefenen? Dan is een abonnement voordeliger.
+            </ThemedText>
+          ) : null}
         </Card>
       ) : null}
 

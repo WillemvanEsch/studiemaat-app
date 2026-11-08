@@ -77,6 +77,8 @@ async function handle(purchase: Purchase) {
   if (r.ok) {
     await finishTransaction({ purchase, isConsumable: consumable }).catch((err) => Sentry.captureException(err))
     if (r.data.me) onMe?.(r.data.me)
+    // Een oud, al afgelopen abonnement (bv. van een ander account) is wel afgerond, maar geen "Gelukt!".
+    if (!consumable && !r.data.active) return emit({ kind: 'cancelled' })
     emit({ kind: 'done', me: r.data.me, lessons: consumable ? LESSON_PRODUCTS[purchase.productId] : undefined })
     return
   }
