@@ -56,6 +56,7 @@ export default function LessonsScreen() {
 
   const name = me?.user.name ?? ''
   const expired = me && !me.access.hasAccess
+  const credits = me?.access.lessonCredits ?? 0
   // Loopt binnenkort af en verlengt niet vanzelf: één rustige regel met "Verlengen" (geen muur).
   const ending = me && !expired ? subscriptionView(me.access).endingSoon : null
   const list = lessons.data ?? []
@@ -98,14 +99,24 @@ export default function LessonsScreen() {
         </>
       )}
 
-      {expired ? (
+      {/* Zonder abonnement of gratis periode: met tegoed (losse lessen) laten zien hoeveel lessen je nog kunt maken,
+          anders uitleggen dat het is afgelopen. Met een abonnement zie je hier niets over tegoed. */}
+      {expired && credits > 0 ? (
+        <Notice kind="ok">
+          <ThemedText type="smallBold">
+            Je kunt nog {credits === 1 ? '1 nieuwe les' : `${credits} nieuwe lessen`} maken
+          </ThemedText>
+          <ThemedText type="small">
+            Dat is je tegoed van losse lessen. Een les die je ermee maakt, blijft altijd van jou.
+          </ThemedText>
+          <Button title="Nieuwe les maken" onPress={() => router.push('/(tabs)/nieuw')} />
+          <Button title="Meer lessen of een abonnement" kind="ghost" onPress={() => router.push('/(tabs)/ik/abonnement')} />
+        </Notice>
+      ) : null}
+      {expired && credits <= 0 ? (
         <Notice kind="warn">
           <ThemedText type="smallBold">Je gratis periode of abonnement is afgelopen</ThemedText>
-          <ThemedText type="small">
-            {me.access.lessonCredits
-              ? `Je lessen blijven bewaard. Je hebt nog ${me.access.lessonCredits === 1 ? '1 les' : `${me.access.lessonCredits} lessen`} tegoed.`
-              : 'Je lessen blijven bewaard. Kies een abonnement of koop een losse les om verder te leren.'}
-          </ThemedText>
+          <ThemedText type="small">Je lessen blijven bewaard. Kies een abonnement of koop een losse les om verder te leren.</ThemedText>
           <Button title="Abonnement of losse les" kind="secondary" onPress={() => router.push('/(tabs)/ik/abonnement')} />
         </Notice>
       ) : null}

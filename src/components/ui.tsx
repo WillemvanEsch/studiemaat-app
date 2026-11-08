@@ -139,7 +139,14 @@ export function Notice({ kind = 'info', children }: { kind?: 'info' | 'ok' | 'wa
   const bg = kind === 'ok' ? theme.successSoft : kind === 'warn' ? theme.warningSoft : kind === 'error' ? theme.destructiveSoft : theme.accent
   return (
     <View style={[styles.notice, { backgroundColor: bg }]}>
-      {typeof children === 'string' ? <ThemedText type="small">{children}</ThemedText> : children}
+      {/* Alleen tekst (ook tekst met {waarden} erin, dan is children een lijst) altijd in ThemedText, anders is hij onzichtbaar. */}
+      {typeof children === 'string' ||
+      typeof children === 'number' ||
+      (Array.isArray(children) && children.every((c) => typeof c === 'string' || typeof c === 'number')) ? (
+        <ThemedText type="small">{children}</ThemedText>
+      ) : (
+        children
+      )}
     </View>
   )
 }
