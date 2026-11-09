@@ -82,7 +82,7 @@ export default function NewLessonScreen() {
     retry: false,
   })
   const [buying, setBuying] = useState(false)
-  const [buyMessage, setBuyMessage] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null)
+  const [buyMessage, setBuyMessage] = useState<{ kind: 'ok' | 'info' | 'error'; text: string } | null>(null)
   useEffect(
     () =>
       onPurchaseEvent((e) => {
@@ -92,6 +92,7 @@ export default function NewLessonScreen() {
           setBuyMessage({ kind: 'ok', text: `Gelukt! Je hebt ${e.lessons === 1 ? 'een les' : `${e.lessons} lessen`} erbij. Maak hieronder je les.` })
           refreshMe().catch(() => {})
         }
+        if (e.kind === 'pending') setBuyMessage({ kind: 'info', text: e.message })
         if (e.kind === 'error') setBuyMessage({ kind: 'error', text: e.message })
       }),
     [refreshMe],
@@ -104,7 +105,7 @@ export default function NewLessonScreen() {
       await buyLesson(offer, lessonOffers.data.info.accountId)
     } catch {
       setBuying(false)
-      setBuyMessage({ kind: 'error', text: 'Het betaalscherm kon niet worden geopend. Probeer het nog eens.' })
+      setBuyMessage({ kind: 'error', text: 'Kopen lukte niet. Probeer het nog eens.' })
     }
   }
 

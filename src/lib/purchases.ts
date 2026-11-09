@@ -22,18 +22,18 @@ import {
   finishTransaction,
   getAvailablePurchases,
   initConnection,
-  isUserCancelledError,
   purchaseErrorListener,
   purchaseUpdatedListener,
   requestPurchase,
   showManageSubscriptionsIOS,
+  syncIOS,
   type Product,
   type ProductSubscription,
   type Purchase,
 } from 'expo-iap'
 import { Platform } from 'react-native'
 
-import { fetchStoreInfo, reportPurchase } from '@/api'
+import { fetchMe, fetchStoreInfo, reportPurchase } from '@/api'
 import type { Me, StoreInfo, StoreName } from '@/api'
 import { Sentry } from '@/lib/sentry'
 
@@ -43,6 +43,7 @@ const ANDROID_PACKAGE = 'nl.studiemaat.app'
 export type PurchaseEvent =
   | { kind: 'busy' }
   | { kind: 'done'; me: Me | null; lessons?: number }
+  | { kind: 'pending'; message: string }
   | { kind: 'error'; message: string }
   | { kind: 'cancelled' }
 
@@ -68,7 +69,10 @@ const isLesson = (p: Purchase) => p.productId in LESSON_PRODUCTS
 
 /** Eén aankoop verwerken: melden bij de website en, als dat definitief is, afronden bij de winkel. */
 async function handle(purchase: Purchase) {
-  if (purchase.purchaseState !== 'purchased') return // bv. Google "in afwachting" (contant betalen in een winkel)
+  // Google "in afwachting" (bv. contant betalen in een winkel of goedkeuring door ouders): pas als hij betaald is,
+  // komt hij opnieuw binnen en verwerken we hem. Wel laten weten, anders blijft de knop draaien.
+  if (purchase.purchaseState === 'pending') return emit({ kind: 'pending', message: PENDING_TEXT })
+  if (purchase.purchaseState !== 'purchased') return
   const id = storeId(purchase)
   if (!id) return
   emit({ kind: 'busy' })
@@ -85,6 +89,86 @@ async function handle(purchase: Purchase) {
   // 409: de website kent de aankoop maar kan hem niet koppelen (bv. ander account). Afronden, anders blijft hij terugkomen.
   if (r.status === 409) await finishTransaction({ purchase, isConsumable: consumable }).catch(() => {})
   emit({ kind: 'error', message: r.error.message })
+}
+
+const STORE_LABEL = STORE === 'apple' ? 'de App Store' : 'Google Play'
+const PENDING_TEXT =
+  'Je betaling wacht nog op goedkeuring (bijvoorbeeld van je bank of van een ouder). Zodra hij is goedgekeurd, zetten we hem ' +
+  'vanzelf aan. Je hoeft niet opnieuw te kopen.'
+
+/** Loopt er nu een betaalscherm (requestPurchase)? Dan meldt buy() de afloop, niet purchaseErrorListener. */
+let buying = false
+
+const codeOf = (err: unknown) => String((err as { code?: unknown } | null)?.code ?? '')
+
+/**
+ * Een mislukte aankoop vertalen naar een melding die klopt. Vroeger was elke fout "Het betaalscherm kon niet worden
+ * geopend", ook als het betaalscherm er wél was en het daarna misging (9 nov 2026: Apple gaf "Gateway Timeout" na de
+ * bankcontrole van Rabobank). Bij twijfel controleren we daarna een paar keer of de aankoop toch is gelukt.
+ */
+function failed(err: unknown) {
+  const code = codeOf(err)
+  if (code === 'user-cancelled') return emit({ kind: 'cancelled' })
+  // Apple: "in afwachting" = goedkeuring van de bank (3D Secure) of "Vraag om te kopen" nog niet rond.
+  if (code === 'deferred-payment' || code === 'pending') {
+    emit({ kind: 'pending', message: PENDING_TEXT })
+    return recheckSoon()
+  }
+  // Heb je hem al (bv. een eerdere poging die toch lukte)? Dan opnieuw melden aan de website.
+  if (code === 'already-owned' || code === 'duplicate-purchase') {
+    emit({ kind: 'busy' })
+    return void restore()
+      .then((r) =>
+        emit(r.active ? { kind: 'done', me: null } : { kind: 'error', message: r.message ?? 'Je hebt dit al gekocht. Tik op "Aankopen herstellen".' }),
+      )
+      .catch(() => emit({ kind: 'error', message: 'Je hebt dit al gekocht. Tik op "Aankopen herstellen".' }))
+  }
+  Sentry.captureException(err, { tags: { area: 'iap', code: code || 'onbekend' } })
+  emit({
+    kind: 'error',
+    message:
+      `${STORE_LABEL} gaf een storing tijdens het betalen. Soms is de betaling toch gelukt: we controleren het zo nog even. ` +
+      'Zie je over een minuut nog geen abonnement, probeer het dan nog eens. Je betaalt nooit twee keer voor hetzelfde abonnement.',
+  })
+  recheckSoon()
+}
+
+let rechecks: ReturnType<typeof setTimeout>[] = []
+
+/**
+ * Na een storing of "in afwachting" een paar keer kijken of de aankoop toch binnen is: bij de winkel (onafgeronde of
+ * lopende aankopen opnieuw melden) en bij de website (die krijgt de aankoop ook rechtstreeks van Apple/Google, via onze
+ * account-id). Komt hij later pas (bank keurt na uren goed), dan pakt purchaseUpdatedListener hem alsnog op.
+ */
+function recheckSoon() {
+  rechecks.forEach(clearTimeout)
+  rechecks = [5, 20, 60].map((s, i, all) =>
+    setTimeout(() => {
+      recheck()
+        .then((ok) => {
+          if (!ok) return
+          rechecks.forEach(clearTimeout)
+          rechecks = []
+        })
+        .catch(() => {})
+      if (i === all.length - 1) rechecks = []
+    }, s * 1000),
+  )
+}
+
+async function recheck(): Promise<boolean> {
+  const r = await restore().catch(() => null)
+  if (r?.active) {
+    emit({ kind: 'done', me: null })
+    return true
+  }
+  const me = await fetchMe()
+  if (me.ok && me.data.access.kind === 'actief' && me.data.access.store === STORE) {
+    onMe?.(me.data)
+    emit({ kind: 'done', me: me.data })
+    return true
+  }
+  return false
 }
 
 /**
@@ -107,13 +191,16 @@ export function startPurchases(setMe: (me: Me) => void) {
       })
     }),
     purchaseErrorListener((err) => {
-      if (isUserCancelledError(err)) return emit({ kind: 'cancelled' })
-      emit({ kind: 'error', message: err.message || 'Kopen lukte niet. Probeer het nog eens.' })
+      // Tijdens buy() gooit requestPurchase dezelfde fout; die handelt buy() af (anders twee meldingen).
+      if (buying) return
+      failed(err)
     }),
   ]
 }
 
 export function stopPurchases() {
+  rechecks.forEach(clearTimeout)
+  rechecks = []
   subscriptions.forEach((s) => s.remove())
   subscriptions = []
   onMe = null
@@ -164,11 +251,31 @@ export async function loadLessonOffers(): Promise<{ info: StoreInfo; offers: Les
   return { info: info.data, offers }
 }
 
+/**
+ * requestPurchase starten. Gooit nooit: de afloop (gelukt, in afwachting, storing, geannuleerd) komt altijd binnen via
+ * onPurchaseEvent, met een melding die past bij wat er misging.
+ */
+async function request(run: () => Promise<unknown>) {
+  rechecks.forEach(clearTimeout)
+  rechecks = []
+  buying = true
+  try {
+    await run()
+  } catch (err) {
+    failed(err)
+  } finally {
+    buying = false
+  }
+}
+
 /** Betaalscherm voor een losse les (eenmalige aankoop). De afloop komt binnen via onPurchaseEvent. */
 export async function buyLesson(offer: LessonOffer, accountId: string) {
   const sku = offer.product.id
-  if (Platform.OS === 'android') await requestPurchase({ type: 'in-app', request: { google: { skus: [sku], obfuscatedAccountId: accountId } } })
-  else await requestPurchase({ type: 'in-app', request: { apple: { sku, appAccountToken: accountId } } })
+  await request(() =>
+    Platform.OS === 'android'
+      ? requestPurchase({ type: 'in-app', request: { google: { skus: [sku], obfuscatedAccountId: accountId } } })
+      : requestPurchase({ type: 'in-app', request: { apple: { sku, appAccountToken: accountId } } }),
+  )
 }
 
 /** Betaalscherm van Apple/Google openen. De afloop komt binnen via onPurchaseEvent. */
@@ -178,27 +285,38 @@ export async function buy(offer: StoreOffer, accountId: string) {
     // Google: het basisabonnement (zonder actie) kiezen.
     const token = p.subscriptionOffers.find((o) => o.offerTokenAndroid && !o.offerTagsAndroid?.length)?.offerTokenAndroid
       ?? p.subscriptionOffers.find((o) => o.offerTokenAndroid)?.offerTokenAndroid
-    await requestPurchase({
-      type: 'subs',
-      request: {
-        google: {
-          skus: [p.id],
-          obfuscatedAccountId: accountId,
-          subscriptionOffers: token ? [{ sku: p.id, offerToken: token }] : undefined,
+    await request(() =>
+      requestPurchase({
+        type: 'subs',
+        request: {
+          google: {
+            skus: [p.id],
+            obfuscatedAccountId: accountId,
+            subscriptionOffers: token ? [{ sku: p.id, offerToken: token }] : undefined,
+          },
         },
-      },
-    })
+      }),
+    )
   } else {
-    await requestPurchase({ type: 'subs', request: { apple: { sku: p.id, appAccountToken: accountId } } })
+    await request(() => requestPurchase({ type: 'subs', request: { apple: { sku: p.id, appAccountToken: accountId } } }))
   }
 }
 
-/** "Aankopen herstellen": alles wat de winkel nog als lopend kent opnieuw aan de website melden. */
-export async function restore(): Promise<{ found: number; restored: number; message?: string; otherAccount?: boolean }> {
-  if (!(await (connected ?? initConnection()))) return { found: 0, restored: 0, message: 'De winkel is nu niet bereikbaar.' }
+/**
+ * "Aankopen herstellen": alles wat de winkel nog als lopend kent opnieuw aan de website melden.
+ * Met sync (de knop) vraagt iOS eerst de laatste stand op bij Apple (AppStore.sync, kan om je Apple ID-wachtwoord
+ * vragen); zonder sync alleen wat de telefoon al weet, zodat we niet bij elk scherm om een wachtwoord vragen.
+ * active = aankopen die nu toegang geven (een oud, afgelopen abonnement telt wel als hersteld, maar niet als actief).
+ */
+export async function restore(
+  opts: { sync?: boolean } = {},
+): Promise<{ found: number; restored: number; active: number; message?: string; otherAccount?: boolean }> {
+  if (!(await (connected ?? initConnection()))) return { found: 0, restored: 0, active: 0, message: 'De winkel is nu niet bereikbaar.' }
+  if (opts.sync && Platform.OS === 'ios') await syncIOS().catch(() => {}) // geannuleerd of geen verbinding: toch verder
   const purchases = await getAvailablePurchases()
   let found = 0
   let restored = 0
+  let active = 0
   let message: string | undefined
   let otherAccount = false
   for (const p of purchases) {
@@ -208,6 +326,7 @@ export async function restore(): Promise<{ found: number; restored: number; mess
     const r = await reportPurchase(STORE, id, p.productId)
     if (r.ok) {
       restored++
+      if (isLesson(p) || r.data.active) active++
       if (r.data.me) onMe?.(r.data.me)
       await finishTransaction({ purchase: p, isConsumable: isLesson(p) }).catch(() => {})
     } else {
@@ -215,7 +334,7 @@ export async function restore(): Promise<{ found: number; restored: number; mess
       if (r.error.reason === 'other_account') otherAccount = true
     }
   }
-  return { found, restored, message, otherAccount }
+  return { found, restored, active, message, otherAccount }
 }
 
 /**

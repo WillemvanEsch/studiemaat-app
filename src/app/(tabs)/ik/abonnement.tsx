@@ -11,6 +11,7 @@ import { useFocusEffect } from 'expo-router'
 import { useCallback, useEffect, useState } from 'react'
 import { Linking, Platform, Pressable, StyleSheet, View } from 'react-native'
 
+import { fetchMe } from '@/api'
 import type { StoreName } from '@/api'
 import { Icon } from '@/components/icon'
 import { ThemedText } from '@/components/themed-text'
@@ -60,15 +61,16 @@ function money(amount: number, currency: string) {
 const TERMS_URL =
   Platform.OS === 'ios' ? 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/' : 'https://play.google.com/about/play-terms/'
 const STORE_TEXT = Platform.OS === 'ios' ? 'je Apple ID' : 'je Google-account'
+const STORE_NAME = Platform.OS === 'ios' ? 'Apple' : 'Google'
 // De winkel van deze telefoon; een abonnement uit de andere winkel kun je hier niet beheren.
 const THIS_STORE: StoreName = Platform.OS === 'ios' ? 'apple' : 'google'
 
 export default function SubscriptionScreen() {
-  const { me, refreshMe } = useAuth()
+  const { me, refreshMe, setMe } = useAuth()
   const theme = useTheme()
   const [busy, setBusy] = useState(false)
   const [picked, setPicked] = useState<StoreOffer['plan']>('jaar')
-  const [message, setMessage] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null)
+  const [message, setMessage] = useState<{ kind: 'ok' | 'info' | 'error'; text: string } | null>(null)
 
   // Bij openen opnieuw ophalen: een periode kan net zijn toegevoegd (bv. door een uitnodiging of de beheerder).
   useFocusEffect(
@@ -89,9 +91,11 @@ export default function SubscriptionScreen() {
               ? `Gelukt! Je hebt ${e.lessons === 1 ? 'een les' : `${e.lessons} lessen`} erbij. Maak je les via het tabblad Nieuw.`
               : 'Gelukt! Je abonnement loopt. Veel succes met leren.',
           })
+        if (e.kind === 'done') refreshMe().catch(() => {})
+        if (e.kind === 'pending') setMessage({ kind: 'info', text: e.message })
         if (e.kind === 'error') setMessage({ kind: 'error', text: e.message })
       }),
-    [],
+    [refreshMe],
   )
 
   const a = me?.access
@@ -148,7 +152,7 @@ export default function SubscriptionScreen() {
       await buy(offer, offers.data.info.accountId)
     } catch {
       setBusy(false)
-      setMessage({ kind: 'error', text: 'Het betaalscherm kon niet worden geopend. Probeer het nog eens.' })
+      setMessage({ kind: 'error', text: 'Kopen lukte niet. Probeer het nog eens.' })
     }
   }
 
@@ -160,7 +164,7 @@ export default function SubscriptionScreen() {
       await buyLesson(offer, lessonOffers.data.info.accountId)
     } catch {
       setBusy(false)
-      setMessage({ kind: 'error', text: 'Het betaalscherm kon niet worden geopend. Probeer het nog eens.' })
+      setMessage({ kind: 'error', text: 'Kopen lukte niet. Probeer het nog eens.' })
     }
   }
   const single = lessonOffers.data?.offers.find((o) => o.lessons === 1)
@@ -168,12 +172,23 @@ export default function SubscriptionScreen() {
   const doRestore = async () => {
     setMessage(null)
     setBusy(true)
-    const r = await restore().catch(() => ({ restored: 0, message: 'Herstellen lukte niet. Probeer het later nog eens.' }))
+    const r = await restore({ sync: true }).catch(() => ({ active: 0, message: `${STORE_NAME} was even niet bereikbaar. Probeer het later nog eens.` }))
+    // De website kan de aankoop ook al rechtstreeks van Apple/Google hebben gekregen.
+    const fresh = await fetchMe().catch(() => null)
+    if (fresh?.ok) setMe(fresh.data)
     setBusy(false)
+    const has = fresh?.ok && fresh.data.access.kind === 'actief' && fresh.data.access.store === THIS_STORE
     setMessage(
-      r.restored
+      r.active || has
         ? { kind: 'ok', text: 'Je abonnement is hersteld.' }
-        : { kind: 'error', text: r.message ?? `We vonden geen abonnement bij ${STORE_TEXT}.` },
+        : r.message
+          ? { kind: 'error', text: r.message }
+          : {
+              kind: 'info',
+              text:
+                `Er is geen lopend abonnement bij ${STORE_TEXT} gevonden, dus er is niets om te herstellen. ` +
+                `Ging een betaling net mis? Dan rekent ${STORE_NAME} ook niets af; een reservering bij je bank vervalt vanzelf.`,
+            },
     )
   }
 
