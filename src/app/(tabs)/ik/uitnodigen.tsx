@@ -42,7 +42,9 @@ export default function InviteScreen() {
   if (invites.isLoading) return <Loading />
   const d = invites.data
   // Geen maximum meer; oudere websites gaven er nog een mee (10).
-  const left = d ? Math.max(0, d.max - d.invites.length) : 0
+  // Op de laatste dag van een gratis periode geeft de website geen maand meer weg (tegen freeriden, sinds 9 nov 2026).
+  const stopped = d?.canGift === false
+  const left = d && !stopped ? Math.max(0, d.max - d.invites.length) : 0
   const days = d?.friendDays ?? 30
   const rewards = d?.rewards ?? []
   const earned = rewards.filter((r) => r.status !== 'wacht').length
@@ -59,6 +61,7 @@ export default function InviteScreen() {
             {'En jij verdient gratis maanden: neemt een vriend die jij uitnodigde een jaarabonnement? Dan krijg jij een maand Studiemaat cadeau. Voor elke vriend opnieuw.'}
           </Notice>
         ) : null}
+        {stopped ? <Notice kind="info">{d?.giftStoppedText ?? 'Op dit moment kun je geen gratis maand cadeau geven.'}</Notice> : null}
         <Button
           title="Deel je link"
           icon="square.and.arrow.up"

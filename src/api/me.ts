@@ -30,6 +30,9 @@ export const fetchInvites = () => apiFetch<{
     rewards?: Reward[]
     rewardMonths?: number
     rewardWaitDays?: number
+    /** Sinds 9 nov 2026: false op de laatste dag van een gratis periode; dan geen maand meer weggeven (ook de link niet). */
+    canGift?: boolean
+    giftStoppedText?: string
   }>('/mobile/invites')
 
 export const sendInvite = (email: string) => apiFetch<{ sent: string }>('/mobile/invites', { method: 'POST', body: { email } })
