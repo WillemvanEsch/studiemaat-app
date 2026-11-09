@@ -71,6 +71,9 @@ export default function SubscriptionScreen() {
   const [busy, setBusy] = useState(false)
   const [picked, setPicked] = useState<StoreOffer['plan']>('jaar')
   const [message, setMessage] = useState<{ kind: 'ok' | 'info' | 'error'; text: string } | null>(null)
+  // Waar de melding komt: bij de knop waar je net op tikte, anders moet je naar boven scrollen om hem te zien.
+  const [place, setPlace] = useState<'abonnement' | 'lessen' | 'herstellen'>('abonnement')
+  const [pickedLesson, setPickedLesson] = useState<number | null>(null)
 
   // Bij openen opnieuw ophalen: een periode kan net zijn toegevoegd (bv. door een uitnodiging of de beheerder).
   useFocusEffect(
@@ -146,6 +149,7 @@ export default function SubscriptionScreen() {
 
   const start = async (offer: StoreOffer) => {
     if (!offers.data) return
+    setPlace('abonnement')
     setMessage(null)
     setBusy(true)
     try {
@@ -158,6 +162,7 @@ export default function SubscriptionScreen() {
 
   const startLesson = async (offer: LessonOffer) => {
     if (!lessonOffers.data) return
+    setPlace('lessen')
     setMessage(null)
     setBusy(true)
     try {
@@ -168,8 +173,13 @@ export default function SubscriptionScreen() {
     }
   }
   const single = lessonOffers.data?.offers.find((o) => o.lessons === 1)
+  // Losse lessen kies je net als een abonnement; de bundel staat vooraan geselecteerd.
+  const lessonList = lessonOffers.data?.offers ?? []
+  const bundleOffer = lessonList.reduce<LessonOffer | undefined>((best, o) => (!best || o.lessons > best.lessons ? o : best), undefined)
+  const chosenLesson = lessonList.find((o) => o.lessons === pickedLesson) ?? bundleOffer
 
   const doRestore = async () => {
+    setPlace('herstellen')
     setMessage(null)
     setBusy(true)
     const r = await restore({ sync: true }).catch(() => ({ active: 0, message: `${STORE_NAME} was even niet bereikbaar. Probeer het later nog eens.` }))
@@ -236,7 +246,7 @@ export default function SubscriptionScreen() {
       </Card>
 
       {view.buyNote && !canBuy ? <Notice>{view.buyNote}</Notice> : null}
-      {message ? <Notice kind={message.kind}>{message.text}</Notice> : null}
+      {message && place === 'abonnement' && !(canBuy && !waiting) ? <Notice kind={message.kind}>{message.text}</Notice> : null}
 
       {/* Op deze Apple ID / dit Google-account loopt nog een abonnement van een ander Studiemaat-account (bv. een oud
           testaccount). De winkel staat dan geen tweede abonnement toe; uitleggen hoe je verder kunt. */}
@@ -333,11 +343,13 @@ export default function SubscriptionScreen() {
           {chosen ? (
             <Button
               title={`Ga verder met ${PLAN_TITLE[chosen.plan]}`}
-              loading={busy}
+              loading={busy && place === 'abonnement'}
+              disabled={busy}
               onPress={() => start(chosen)}
               style={{ paddingVertical: Spacing.four }}
             />
           ) : null}
+          {message && place === 'abonnement' ? <Notice kind={message.kind}>{message.text}</Notice> : null}
           <ThemedText type="small" themeColor="textSecondary">
             {chosen ? `${PLAN_TEXT[chosen.plan]} ${chosen.product.displayPrice}. ` : ''}Je betaalt via {STORE_TEXT}. Het abonnement wordt automatisch verlengd voor dezelfde periode en prijs, tenzij je het
             uiterlijk 24 uur voor het einde van de periode opzegt in de instellingen van je telefoon. Je lessen blijven altijd bewaard.
@@ -366,19 +378,25 @@ export default function SubscriptionScreen() {
             <Notice kind="ok">Je hebt nog {a.lessonCredits === 1 ? '1 les' : `${a.lessonCredits} lessen`} tegoed. Maak je les via het tabblad Nieuw.</Notice>
           ) : null}
           {lessonOffers.isLoading ? <Loading /> : null}
-          {lessonOffers.data?.offers.map((o) => {
+          {lessonList.map((o) => {
             const bundle = o.lessons > 1
+            const active = o.lessons === chosenLesson?.lessons
             const per = bundle && o.product.price ? money(o.product.price / o.lessons, o.product.currency) : null
             const save = bundle && single?.product.price && o.product.price ? Math.round((1 - o.product.price / (single.product.price * o.lessons)) * 100) : 0
             return (
               <Pressable
                 key={o.product.id}
-                accessibilityRole="button"
+                accessibilityRole="radio"
+                accessibilityState={{ selected: active }}
                 disabled={busy}
-                onPress={() => startLesson(o)}
+                onPress={() => setPickedLesson(o.lessons)}
                 style={({ pressed }) => [
                   styles.offer,
-                  { borderColor: bundle ? theme.primary : theme.border, backgroundColor: bundle ? theme.accent : theme.backgroundElement, borderWidth: bundle ? 2 : 1 },
+                  {
+                    borderColor: active ? theme.primary : theme.border,
+                    backgroundColor: active ? theme.accent : theme.backgroundElement,
+                    borderWidth: active ? 2 : 1,
+                  },
                   pressed && { opacity: 0.7 },
                 ]}>
                 {bundle ? (
@@ -388,7 +406,7 @@ export default function SubscriptionScreen() {
                     </ThemedText>
                   </View>
                 ) : null}
-                <Icon name={bundle ? 'sparkles' : 'book.fill'} size={22} tintColor={theme.primary} />
+                <Icon name={active ? 'checkmark.circle.fill' : 'circle'} size={22} tintColor={active ? theme.primary : theme.textSecondary} />
                 <View style={{ flex: 1, gap: 2 }}>
                   <ThemedText style={{ fontWeight: 700, fontSize: 17 }}>{bundle ? `${o.lessons} losse lessen` : '1 losse les'}</ThemedText>
                   <ThemedText type="small" themeColor="textSecondary">
@@ -404,6 +422,16 @@ export default function SubscriptionScreen() {
               </Pressable>
             )
           })}
+          {chosenLesson ? (
+            <Button
+              title={`Koop ${chosenLesson.lessons === 1 ? '1 losse les' : `${chosenLesson.lessons} losse lessen`} voor ${chosenLesson.product.displayPrice}`}
+              loading={busy && place === 'lessen'}
+              disabled={busy}
+              onPress={() => startLesson(chosenLesson)}
+              style={{ paddingVertical: Spacing.four }}
+            />
+          ) : null}
+          {message && place === 'lessen' ? <Notice kind={message.kind}>{message.text}</Notice> : null}
           {lessonOffers.data ? (
             <ThemedText type="small" themeColor="textSecondary">
               Eenmalige aankoop via {STORE_TEXT}, er wordt niets verlengd. Ga je vaker oefenen? Dan is een abonnement voordeliger.
@@ -412,7 +440,10 @@ export default function SubscriptionScreen() {
         </Card>
       ) : null}
 
-      {a.kind !== 'gratis' ? <Button title="Aankopen herstellen" kind="ghost" disabled={busy} onPress={doRestore} /> : null}
+      {a.kind !== 'gratis' ? (
+        <Button title="Aankopen herstellen" kind="ghost" disabled={busy} loading={busy && place === 'herstellen'} onPress={doRestore} />
+      ) : null}
+      {message && place === 'herstellen' ? <Notice kind={message.kind}>{message.text}</Notice> : null}
     </Screen>
   )
 }
