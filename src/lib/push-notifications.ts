@@ -97,6 +97,8 @@ function routeFromUrl(url: string | undefined): string {
   if (/^\/nieuw\b/.test(url)) return '/(tabs)/nieuw'
   // "Je hebt een gratis maand verdiend" (ambassadeursbeloning): naar Uitnodigen.
   if (/^\/uitnodigen\b/.test(url)) return '/(tabs)/ik/uitnodigen'
+  // "Proef bijna voorbij / voorbij": naar Abonnement (abonnementen en, zonder toegang, losse lessen).
+  if (/^\/abonnement\b/.test(url)) return '/(tabs)/ik/abonnement'
   return '/(tabs)'
 }
 

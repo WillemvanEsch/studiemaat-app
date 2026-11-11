@@ -122,6 +122,7 @@ krijg je na 14 dagen een gratis maand (`rewards` in `/mobile/invites`, regels in
 - Eerste melding: "Je les is klaar" na het verwerken van foto's.
 - Herinneringen om 19:00 (sinds 6 nov 2026, regels in studypro `push-reminders.ts`): "Even oefenen?" en "Toets op komst?" openen
   `/les/<id>`, "Maak je eerste les" stuurt `/nieuw` (→ tab Nieuw). Uitzetten in Instellingen (`pushReminders` via `PATCH me`).
+  "Proef nog 2 dagen / laatste dag / voorbij" (sinds 11 nov 2026) sturen `/abonnement` (→ `ik/abonnement`).
 - Android heeft de FCM V1-sleutel in EAS nodig (`eas credentials` → Android → FCM V1). Simulator krijgt geen token.
 - Firebase-project `studiemaat-app` (zonder Analytics en Gemini). `google-services.json` staat in de repo (niet geheim) en
   is gekoppeld via `android.googleServicesFile` in `app.json`. De FCM V1-sleutel (service account) is wél geheim: alleen in EAS.
