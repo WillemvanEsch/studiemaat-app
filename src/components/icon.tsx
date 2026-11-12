@@ -161,6 +161,7 @@ const SF_TO_MATERIAL: Record<string, MaterialName> = {
   'iphone': 'smartphone',
   'lock.shield': 'shield',
   circle: 'radio-button-unchecked',
+  shuffle: 'shuffle',
 };
 
 const FALLBACK_DEFAULT: MaterialName = 'circle';
