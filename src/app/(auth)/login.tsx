@@ -3,15 +3,18 @@
  * Nog geen account? Dan maakt dezelfde stap er een aan, met een gratis proefweek.
  */
 
-import { useState } from 'react'
-import { Image, KeyboardAvoidingView, Platform, StyleSheet, View } from 'react-native'
+import { useEffect, useState } from 'react'
+import { Image, KeyboardAvoidingView, Linking, Platform, StyleSheet, View } from 'react-native'
 
 import { Wordmark } from '@/components/brand'
 import { ThemedText } from '@/components/themed-text'
 import { Button, Field, Notice, Screen } from '@/components/ui'
 import { Spacing } from '@/constants/theme'
 import { useAuth } from '@/contexts/auth-context'
-import { looksLikeSchoolEmail } from '@/lib/school-mail'
+
+/** Zo lang wachten voor je een nieuwe code kunt laten sturen: mail heeft soms even nodig. */
+const RESEND_SECONDS = 30
+const CONTACT = 'info@studiemaat.nl'
 
 export default function LoginScreen() {
   const { requestCode, verifyCode } = useAuth()
@@ -21,6 +24,16 @@ export default function LoginScreen() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [note, setNote] = useState<string | null>(null)
+  // "Stuur opnieuw" kan pas een halve minuut na de laatst verstuurde code.
+  const [sentAt, setSentAt] = useState(0)
+  const [now, setNow] = useState(0)
+  const wait = Math.max(0, Math.ceil((sentAt + RESEND_SECONDS * 1000 - now) / 1000))
+
+  useEffect(() => {
+    if (step !== 'code') return
+    const timer = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(timer)
+  }, [step])
 
   async function sendCode(existing = false) {
     setBusy(true)
@@ -32,6 +45,9 @@ export default function LoginScreen() {
     setNote(r.data.note)
     setCode('')
     setStep('code')
+    const t = Date.now()
+    setSentAt(t)
+    setNow(t)
   }
 
   async function checkCode(value = code) {
@@ -69,12 +85,6 @@ export default function LoginScreen() {
               onSubmitEditing={() => sendCode()}
               placeholder="naam@voorbeeld.nl"
             />
-            {looksLikeSchoolEmail(email) ? (
-              <Notice kind="warn">
-                Dit lijkt een schooladres. Scholen houden mail van buiten vaak tegen, dan komt de code niet aan. Gebruik liever een
-                privé-adres, zoals Gmail of iCloud.
-              </Notice>
-            ) : null}
             {error ? <Notice kind="error">{error}</Notice> : null}
             <Button title="Stuur me een code" loading={busy} disabled={!email.includes('@')} onPress={() => sendCode()} />
             <ThemedText type="small" themeColor="textSecondary" style={styles.center}>
@@ -88,13 +98,6 @@ export default function LoginScreen() {
               We hebben een code van 6 cijfers gestuurd naar <ThemedText style={{ fontWeight: 700 }}>{email}</ThemedText>.
             </ThemedText>
             {note ? <Notice>{note}</Notice> : null}
-            {/* Schooladressen nemen de mail aan maar zetten hem vaak in quarantaine (zie lib/school-mail). */}
-            {looksLikeSchoolEmail(email) ? (
-              <Notice kind="warn">
-                Dit lijkt een schooladres. Scholen houden mail van buiten vaak tegen of zetten hem in quarantaine. Geen code binnen een
-                paar minuten? Kies dan hieronder &quot;Ander mailadres&quot; en gebruik een privé-adres.
-              </Notice>
-            ) : null}
             <Field
               label="Code"
               value={code}
@@ -112,16 +115,46 @@ export default function LoginScreen() {
             />
             {error ? <Notice kind="error">{error}</Notice> : null}
             <Button title="Inloggen" loading={busy} disabled={code.length !== 6} onPress={() => checkCode()} />
-            <ThemedText type="small" themeColor="textSecondary" style={styles.center}>
-              Geen code ontvangen? Kijk in je spam of ongewenste mail, en bij Outlook ook bij Overige of in de quarantaine. Nog steeds
-              niets? Gebruik dan een privé-adres. De code werkt 10 minuten.
-            </ThemedText>
+            <Button
+              title={wait > 0 ? `Stuur opnieuw (over ${wait} s)` : 'Stuur een nieuwe code'}
+              kind="ghost"
+              disabled={wait > 0 || busy}
+              onPress={() => sendCode()}
+            />
             <Button title="Ander mailadres" kind="ghost" onPress={() => setStep('email')} />
+            {/* Veel nieuwe accounts vullen de code nooit in: spam, quarantaine (vaak bij schooladressen) of een typfout.
+                Daarom voor iedereen dezelfde korte stappen, en een mailadres om ons te bereiken. */}
+            <View style={styles.help}>
+              <ThemedText type="smallBold">Geen mail gekregen?</ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">
+                • Kijk in je spam of ongewenste mail (bij Outlook ook bij Overige, bij een schooladres soms in de quarantaine).
+              </ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">
+                • Klopt het mailadres hierboven? Zo niet, kies &quot;Ander mailadres&quot;.
+              </ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">
+                • Na een halve minuut kun je een nieuwe code laten sturen. Een code werkt 10 minuten.
+              </ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">
+                • Lukt het nog steeds niet? Mail ons op{' '}
+                <ThemedText type="smallBold" themeColor="link" onPress={() => Linking.openURL(contactMail(email)).catch(() => {})}>
+                  {CONTACT}
+                </ThemedText>
+                , dan helpen we je.
+              </ThemedText>
+            </View>
           </View>
         )}
       </Screen>
     </KeyboardAvoidingView>
   )
+}
+
+/** Mail aan ons met het adres erin, zodat we meteen kunnen kijken wat er misging. */
+function contactMail(email: string) {
+  const subject = encodeURIComponent('Geen inlogcode ontvangen')
+  const body = encodeURIComponent(`Ik krijg geen inlogcode op dit adres: ${email}\n\n`)
+  return `mailto:${CONTACT}?subject=${subject}&body=${body}`
 }
 
 const styles = StyleSheet.create({
@@ -130,5 +163,6 @@ const styles = StyleSheet.create({
   logo: { width: 72, height: 72, borderRadius: 18 },
   center: { textAlign: 'center' },
   form: { gap: Spacing.three },
+  help: { gap: Spacing.one },
   code: { fontSize: 28, letterSpacing: 8, textAlign: 'center' },
 })
