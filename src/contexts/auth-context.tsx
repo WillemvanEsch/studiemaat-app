@@ -23,6 +23,7 @@ import {
 import type { ApiResult, Me, Session } from '@/api'
 import { setupPushNotifications, tearDownPushNotifications } from '@/lib/push-notifications'
 import { startPurchases, stopPurchases } from '@/lib/purchases'
+import { Sentry } from '@/lib/sentry'
 import { clearLoginSecret, clearSession, getMe, getToken, loginSecret, saveMe, saveSession } from '@/lib/storage'
 
 export type AuthStatus = 'loading' | 'authenticated' | 'unauthenticated'
@@ -142,6 +143,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (status === 'authenticated') startPurchases((next) => void setMe(next))
     else if (status === 'unauthenticated') stopPurchases()
   }, [status, setMe])
+
+  // Alleen het accountnummer naar Sentry (geen naam of mailadres): zo staat een crash in Beheer → Fouten bij het juiste account.
+  const userId = me?.user.id
+  useEffect(() => {
+    Sentry.setUser(userId ? { id: String(userId) } : null)
+  }, [userId])
 
   const value = useMemo<AuthContextValue>(
     () => ({ status, me, requestCode, verifyCode, loginWithLink, logout, refreshMe, setMe }),
