@@ -239,7 +239,7 @@ export default function NewLessonScreen() {
         <View style={styles.grid}>
           {photos.map((p, i) => (
             <View key={`${p.uri}-${i}`} style={[styles.thumb, { borderColor: theme.border }]}>
-              <Image source={{ uri: p.uri }} style={StyleSheet.absoluteFill} contentFit="cover" />
+              <Image source={{ uri: p.preview }} style={StyleSheet.absoluteFill} contentFit="cover" />
               <ThemedText style={[styles.badge, { backgroundColor: theme.primary, color: theme.primaryForeground }]}>{i + 1}</ThemedText>
               {!busy ? (
                 <Pressable

@@ -10,18 +10,37 @@ import * as ImagePicker from 'expo-image-picker'
 
 import { uploadPhoto } from '@/api'
 
-export type Photo = { uri: string; width: number; height: number }
+/**
+ * `uri` is de originele foto (vaak 12 tot 48 megapixel) en wordt pas bij het uploaden verkleind.
+ * `preview` is een klein plaatje voor de miniaturen op het scherm Nieuw. Zonder dat moet expo-image elke
+ * volle foto op het hoofdthread verkleinen, en dan hangt de app seconden lang (Sentry "App Hanging", nov 2026).
+ */
+export type Photo = { uri: string; width: number; height: number; preview: string }
 
 export const MAX_PAGES = 20
 const MAX_SIDE = 2000
+/** Langste kant van een miniatuur: ruim genoeg voor een vakje van ~110 pt op een scherm met 3x pixels. */
+const PREVIEW_SIDE = 360
+
+/** Klein plaatje maken (buiten het hoofdthread, via expo-image-manipulator). Lukt het niet, dan het origineel. */
+async function withPreview(a: { uri: string; width: number; height: number }): Promise<Photo> {
+  try {
+    const ctx = ImageManipulator.manipulate(a.uri)
+    ctx.resize(a.width >= a.height ? { width: Math.min(PREVIEW_SIDE, a.width || PREVIEW_SIDE) } : { height: Math.min(PREVIEW_SIDE, a.height || PREVIEW_SIDE) })
+    const image = await ctx.renderAsync()
+    const saved = await image.saveAsync({ compress: 0.7, format: SaveFormat.JPEG })
+    return { uri: a.uri, width: a.width, height: a.height, preview: saved.uri }
+  } catch {
+    return { uri: a.uri, width: a.width, height: a.height, preview: a.uri }
+  }
+}
 
 export async function takePhoto(): Promise<Photo | null | 'geen-toestemming'> {
   const perm = await ImagePicker.requestCameraPermissionsAsync()
   if (!perm.granted) return 'geen-toestemming'
   const r = await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: 0.9 })
   if (r.canceled || !r.assets[0]) return null
-  const a = r.assets[0]
-  return { uri: a.uri, width: a.width, height: a.height }
+  return withPreview(r.assets[0])
 }
 
 export async function pickPhotos(max: number): Promise<Photo[]> {
@@ -33,7 +52,10 @@ export async function pickPhotos(max: number): Promise<Photo[]> {
     quality: 0.9,
   })
   if (r.canceled) return []
-  return r.assets.map((a) => ({ uri: a.uri, width: a.width, height: a.height }))
+  // Na elkaar, zodat er niet twintig grote foto's tegelijk in het geheugen staan.
+  const photos: Photo[] = []
+  for (const a of r.assets) photos.push(await withPreview(a))
+  return photos
 }
 
 async function shrink(photo: Photo): Promise<string> {

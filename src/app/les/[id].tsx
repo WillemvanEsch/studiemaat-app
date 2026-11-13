@@ -407,7 +407,10 @@ function Photos({ lesson }: { lesson: Lesson }) {
       {lesson.pages.map((p) => (
         <Image
           key={p.id}
-          source={{ uri: `${BASE_URL.replace(/\/api\/v1$/, '')}${p.url}`, headers }}
+          // ?w=1600: de website stuurt een verkleinde foto (oudere website negeert het en stuurt het origineel).
+          // Scheelt data en voorkomt dat expo-image grote foto's op het hoofdthread moet verkleinen.
+          source={{ uri: `${BASE_URL.replace(/\/api\/v1$/, '')}${p.url}?w=1600`, headers }}
+          recyclingKey={String(p.id)}
           style={{ width: '100%', aspectRatio: 3 / 4, borderRadius: Radius.md }}
           contentFit="contain"
           accessibilityLabel={`Foto ${p.position + 1}`}
