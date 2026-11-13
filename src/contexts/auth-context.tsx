@@ -14,12 +14,13 @@ import type { ReactNode } from 'react'
 
 import {
   fetchMe,
+  loginWithLink as apiLoginWithLink,
   logout as apiLogout,
   requestCode as apiRequestCode,
   setUnauthorizedHandler,
   verifyCode as apiVerifyCode,
 } from '@/api'
-import type { ApiResult, Me } from '@/api'
+import type { ApiResult, Me, Session } from '@/api'
 import { setupPushNotifications, tearDownPushNotifications } from '@/lib/push-notifications'
 import { startPurchases, stopPurchases } from '@/lib/purchases'
 import { clearLoginSecret, clearSession, getMe, getToken, loginSecret, saveMe, saveSession } from '@/lib/storage'
@@ -33,6 +34,8 @@ export interface AuthContextValue {
   requestCode(email: string, existing?: boolean): Promise<ApiResult<{ email: string; note: string | null }>>
   /** Stap 2. Bij succes is status meteen 'authenticated'. */
   verifyCode(email: string, code: string): Promise<ApiResult<{ isNew: boolean }>>
+  /** Inloggen met de link uit de codemail (scherm `inloggen`). Bij succes is status meteen 'authenticated'. */
+  loginWithLink(token: string): Promise<ApiResult<{ isNew: boolean }>>
   logout(): Promise<void>
   /** Actuele stand van het account ophalen (na betalen, instellingen enz.). */
   refreshMe(): Promise<void>
@@ -90,18 +93,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return apiRequestCode(email, secret, existing)
   }, [])
 
-  const verifyCode = useCallback(async (email: string, code: string): Promise<ApiResult<{ isNew: boolean }>> => {
-    const secret = await loginSecret(false)
-    const r = await apiVerifyCode(email, code, secret)
-    if (!r.ok) return r
-    const { token, isNew, ...rest } = r.data
+  // Na een goede code of inloglink: sessie bewaren en de app op ingelogd zetten.
+  const signedIn = useCallback(async (session: Session): Promise<{ isNew: boolean }> => {
+    const { token, isNew, ...rest } = session
     await saveSession(token, rest)
     await clearLoginSecret()
     setMeState(rest)
     setStatus('authenticated')
     setupPushNotifications().catch(() => {})
-    return { ok: true, data: { isNew } }
+    return { isNew }
   }, [])
+
+  const verifyCode = useCallback(
+    async (email: string, code: string): Promise<ApiResult<{ isNew: boolean }>> => {
+      const secret = await loginSecret(false)
+      const r = await apiVerifyCode(email, code, secret)
+      if (!r.ok) return r
+      return { ok: true, data: await signedIn(r.data) }
+    },
+    [signedIn],
+  )
+
+  const loginWithLink = useCallback(
+    async (token: string): Promise<ApiResult<{ isNew: boolean }>> => {
+      const r = await apiLoginWithLink(token)
+      if (!r.ok) return r
+      return { ok: true, data: await signedIn(r.data) }
+    },
+    [signedIn],
+  )
 
   const logout = useCallback(async () => {
     // Eerst push afmelden: daarvoor is het token nog nodig.
@@ -124,8 +144,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [status, setMe])
 
   const value = useMemo<AuthContextValue>(
-    () => ({ status, me, requestCode, verifyCode, logout, refreshMe, setMe }),
-    [status, me, requestCode, verifyCode, logout, refreshMe, setMe],
+    () => ({ status, me, requestCode, verifyCode, loginWithLink, logout, refreshMe, setMe }),
+    [status, me, requestCode, verifyCode, loginWithLink, logout, refreshMe, setMe],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

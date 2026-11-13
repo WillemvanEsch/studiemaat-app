@@ -15,6 +15,14 @@ export function verifyCode(email: string, code: string, loginSecret: string): Pr
   return apiFetch<Session>('/mobile/auth/verify', { method: 'POST', auth: false, body: { email, code, loginSecret } })
 }
 
+/**
+ * Inloggen met de knop "Direct inloggen" uit de codemail. De website-pagina opent de app met
+ * studiemaat://inloggen?t=<token>; dat token is eenmalig en 10 minuten geldig. Antwoord gelijk aan verifyCode.
+ */
+export function loginWithLink(token: string): Promise<ApiResult<Session>> {
+  return apiFetch<Session>('/mobile/auth/link', { method: 'POST', auth: false, body: { token } })
+}
+
 export function logout(pushToken: string | null) {
   return apiFetch<{ ok: true }>('/mobile/auth/logout', { method: 'POST', body: { pushToken } })
 }

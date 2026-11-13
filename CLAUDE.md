@@ -75,7 +75,10 @@ Zelfde mailcode als de website, maar zonder cookies:
 2. `POST /mobile/auth/verify` geeft een sessietoken (zelfde `sessions`-tabel, `client = 'app'`).
 3. Dat token gaat als `Authorization: Bearer` mee met elke call. Een 401 = uitgelogd (sessie weg of account
    verwijderd); `setUnauthorizedHandler` zet de app dan terug naar inloggen.
-4. Elke call stuurt ook `x-studiemaat-device` (vaste id per installatie) mee, voor de misbruikcontrole.
+4. Knop "Direct inloggen" in de codemail (sinds 13 nov 2026): de pagina `studiemaat.nl/login/link` biedt op de telefoon
+   "Open de Studiemaat-app" (`studiemaat://inloggen?t=<token>`) → scherm `src/app/inloggen.tsx` → `POST /mobile/auth/link`.
+   Geen universal links nodig; de code blijft gewoon werken.
+5. Elke call stuurt ook `x-studiemaat-device` (vaste id per installatie) mee, voor de misbruikcontrole.
 
 Testaccount voor Apple/Google-review: `APP_REVIEW_EMAIL` + `APP_REVIEW_CODE` in Vercel; daarvoor wordt geen mail
 verstuurd. Geef dat account in Beheer "Altijd gratis".

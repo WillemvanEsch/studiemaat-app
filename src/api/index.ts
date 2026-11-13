@@ -3,7 +3,7 @@
  */
 
 export { apiFetch, authHeaders, BASE_URL, setUnauthorizedHandler } from './client'
-export { logout, requestCode, verifyCode } from './auth'
+export { loginWithLink, logout, requestCode, verifyCode } from './auth'
 export { deleteAccount, fetchInvites, fetchMe, fetchOptions, sendInvite, updateMe } from './me'
 export type { UpdateMeInput } from './me'
 export {
